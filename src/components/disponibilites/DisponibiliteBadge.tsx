@@ -1,18 +1,8 @@
 import type { DisponibiliteEffectiveDto } from '../../api/disponibilites';
-
-const LABELS: Record<DisponibiliteEffectiveDto['statut'], string> = {
-  present: 'Présent',
-  disponible: 'Disponible',
-  absent: 'Absent',
-  autre: 'Autre',
-};
-
-const COLORS: Record<DisponibiliteEffectiveDto['statut'], string> = {
-  present: '#1a7f37',
-  disponible: '#2563eb',
-  absent: '#b91c1c',
-  autre: '#6b7280',
-};
+import {
+  STATUT_DISPONIBILITE_COLORS as COLORS,
+  STATUT_DISPONIBILITE_LABELS as LABELS,
+} from './statutDisponibilite.constants';
 
 interface Props {
   disponibilite: DisponibiliteEffectiveDto;

@@ -59,3 +59,61 @@ export async function fetchDisponibilitesEffectif(
   }
   return (await res.json()) as DisponibilitesEffectifResponseDto;
 }
+
+export interface DisponibiliteActiviteDto {
+  id: string;
+  utilisateurId: string;
+  activiteId: string;
+  statut: StatutDisponibilite;
+  commentaire?: string;
+}
+
+export interface DeclarerDisponibiliteActiviteInput {
+  statut: StatutDisponibilite;
+  commentaire?: string;
+  /** Admin uniquement : cible un autre utilisateur que soi-même. */
+  utilisateurId?: string;
+}
+
+async function parseJsonOrThrow<T>(res: Response, messageErreur: string): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const message =
+      (body && typeof body === 'object' && 'message' in body && String(body.message)) ||
+      `${messageErreur} (${res.status})`;
+    throw new Error(message);
+  }
+  return (await res.json()) as T;
+}
+
+export async function declarerDisponibiliteActivite(
+  activiteId: string,
+  dto: DeclarerDisponibiliteActiviteInput,
+): Promise<DisponibiliteActiviteDto> {
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/activite/${activiteId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+  return parseJsonOrThrow<DisponibiliteActiviteDto>(
+    res,
+    'Erreur lors de la déclaration de la disponibilité',
+  );
+}
+
+export async function supprimerDisponibiliteActivite(
+  activiteId: string,
+  utilisateurId?: string,
+): Promise<void> {
+  const query = utilisateurId ? `?utilisateurId=${encodeURIComponent(utilisateurId)}` : '';
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/activite/${activiteId}${query}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const message =
+      (body && typeof body === 'object' && 'message' in body && String(body.message)) ||
+      `Erreur lors de la suppression de la surcharge (${res.status})`;
+    throw new Error(message);
+  }
+}
