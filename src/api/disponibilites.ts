@@ -117,3 +117,41 @@ export async function supprimerDisponibiliteActivite(
     throw new Error(message);
   }
 }
+
+export interface DisponibiliteJourneeDto {
+  id: string;
+  utilisateurId: string;
+  date: string;
+  statut: StatutDisponibilite;
+  commentaire?: string;
+}
+
+export interface DeclarerDisponibiliteJourneeInput {
+  statut: StatutDisponibilite;
+  commentaire?: string;
+  /** Admin uniquement : cible un autre utilisateur que soi-même. */
+  utilisateurId?: string;
+}
+
+export async function declarerDisponibiliteJournee(
+  date: string,
+  dto: DeclarerDisponibiliteJourneeInput,
+): Promise<DisponibiliteJourneeDto> {
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/journee/${date}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+  return parseJsonOrThrow<DisponibiliteJourneeDto>(
+    res,
+    'Erreur lors de la déclaration de la disponibilité de journée',
+  );
+}
+
+export async function fetchMesDisponibilitesJournee(): Promise<DisponibiliteJourneeDto[]> {
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/journee/mes-disponibilites`);
+  return parseJsonOrThrow<DisponibiliteJourneeDto[]>(
+    res,
+    'Erreur lors de la récupération de mes disponibilités de journée',
+  );
+}

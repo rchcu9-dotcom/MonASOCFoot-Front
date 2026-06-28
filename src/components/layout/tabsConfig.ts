@@ -12,6 +12,12 @@ export interface TabConfig {
 export const tabsConfig: TabConfig[] = [
   { id: 'accueil', label: 'Accueil', shortLabel: 'Accueil', path: '/', primary: true },
   {
+    id: 'mes-disponibilites',
+    label: 'Mes disponibilités',
+    shortLabel: 'Mes dispos',
+    path: '/mes-disponibilites',
+  },
+  {
     id: 'disponibilites-effectif',
     label: 'Disponibilités de l\'effectif',
     shortLabel: 'Disponibilités',

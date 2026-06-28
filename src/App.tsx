@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { DisponibilitesEffectifPage } from './pages/DisponibilitesEffectifPage';
+import { MesDisponibilitesPage } from './pages/MesDisponibilitesPage';
 import { AdminActivitesPage } from './pages/AdminActivitesPage';
 import { AdminUtilisateursPage } from './pages/AdminUtilisateursPage';
 
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/mes-disponibilites" element={<MesDisponibilitesPage />} />
         <Route path="/disponibilites/effectif" element={<DisponibilitesEffectifPage />} />
         <Route
           path="/admin/activites"
