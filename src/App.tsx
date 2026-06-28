@@ -1,0 +1,38 @@
+import { Routes, Route } from 'react-router-dom';
+import { LayoutRoot } from './components/layout/LayoutRoot';
+import { RequireAdminRoute } from './components/layout/RequireAdminRoute';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { DisponibilitesEffectifPage } from './pages/DisponibilitesEffectifPage';
+import { AdminActivitesPage } from './pages/AdminActivitesPage';
+import { AdminUtilisateursPage } from './pages/AdminUtilisateursPage';
+
+export default function App() {
+  return (
+    <LayoutRoot>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/disponibilites/effectif" element={<DisponibilitesEffectifPage />} />
+        <Route
+          path="/admin/activites"
+          element={
+            <RequireAdminRoute>
+              <AdminActivitesPage />
+            </RequireAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/utilisateurs"
+          element={
+            <RequireAdminRoute>
+              <AdminUtilisateursPage />
+            </RequireAdminRoute>
+          }
+        />
+      </Routes>
+    </LayoutRoot>
+  );
+}
