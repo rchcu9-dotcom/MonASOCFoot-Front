@@ -3,6 +3,8 @@ import {
   fetchDisponibilitesEffectif,
   declarerDisponibiliteActivite,
   supprimerDisponibiliteActivite,
+  declarerDisponibiliteJournee,
+  fetchMesDisponibilitesJournee,
 } from '../disponibilites';
 import { authFetch } from '../authFetch';
 
@@ -174,5 +176,95 @@ describe('supprimerDisponibiliteActivite', () => {
     vi.mocked(authFetch).mockResolvedValue(mockResponse(null, true, 204));
 
     await expect(supprimerDisponibiliteActivite('activite-1')).resolves.toBeUndefined();
+  });
+});
+
+describe('declarerDisponibiliteJournee', () => {
+  beforeEach(() => {
+    vi.mocked(authFetch).mockReset();
+  });
+
+  it('appelle authFetch en PUT sur /disponibilites/journee/:date avec le DTO en JSON', async () => {
+    const dto = { statut: 'present' as const, commentaire: 'Je viens' };
+    vi.mocked(authFetch).mockResolvedValue(mockResponse({
+      id: 'dispo-journee-1',
+      utilisateurId: 'u1',
+      date: '2026-07-01',
+      statut: 'present',
+      commentaire: 'Je viens',
+    }));
+
+    await declarerDisponibiliteJournee('2026-07-01', dto);
+
+    expect(authFetch).toHaveBeenCalledWith('http://localhost:3020/disponibilites/journee/2026-07-01', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+  });
+
+  it('renvoie le JSON parsé quand la réponse est ok', async () => {
+    const body = { id: 'dispo-journee-1', utilisateurId: 'u1', date: '2026-07-01', statut: 'absent' };
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(body));
+
+    const result = await declarerDisponibiliteJournee('2026-07-01', { statut: 'absent' });
+
+    expect(result).toEqual(body);
+  });
+
+  it('lève une erreur avec le message du corps de réponse quand la réponse n\'est pas ok (ex: 403 joueur ciblant un autre utilisateur)', async () => {
+    vi.mocked(authFetch).mockResolvedValue(
+      mockResponse(
+        { message: "Seul un admin peut modifier la disponibilité d'un autre utilisateur" },
+        false,
+        403,
+      ),
+    );
+
+    await expect(
+      declarerDisponibiliteJournee('2026-07-01', { statut: 'absent', utilisateurId: 'autre-joueur' }),
+    ).rejects.toThrow(/Seul un admin peut modifier/);
+  });
+
+  it('lève une erreur générique quand la réponse n\'est pas ok et ne contient pas de message', async () => {
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(null, false, 500));
+
+    await expect(declarerDisponibiliteJournee('2026-07-01', { statut: 'absent' })).rejects.toThrow(
+      /500/,
+    );
+  });
+});
+
+describe('fetchMesDisponibilitesJournee', () => {
+  beforeEach(() => {
+    vi.mocked(authFetch).mockReset();
+  });
+
+  it('appelle authFetch en GET implicite sur /disponibilites/journee/mes-disponibilites', async () => {
+    vi.mocked(authFetch).mockResolvedValue(mockResponse([]));
+
+    await fetchMesDisponibilitesJournee();
+
+    expect(authFetch).toHaveBeenCalledWith(
+      'http://localhost:3020/disponibilites/journee/mes-disponibilites',
+    );
+  });
+
+  it('renvoie le tableau JSON parsé quand la réponse est ok', async () => {
+    const body = [
+      { id: 'd1', utilisateurId: 'u1', date: '2026-07-01', statut: 'present' },
+      { id: 'd2', utilisateurId: 'u1', date: '2026-07-08', statut: 'absent', commentaire: 'Vacances' },
+    ];
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(body));
+
+    const result = await fetchMesDisponibilitesJournee();
+
+    expect(result).toEqual(body);
+  });
+
+  it("lève une erreur quand la réponse n'est pas ok", async () => {
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(null, false, 500));
+
+    await expect(fetchMesDisponibilitesJournee()).rejects.toThrow(/500/);
   });
 });
