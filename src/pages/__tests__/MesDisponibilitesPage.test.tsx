@@ -1,295 +1,311 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MesDisponibilitesPage } from '../MesDisponibilitesPage';
-import { useAuth } from '../../auth/AuthContext';
+import { useMesActivitesParColonne } from '../../hooks/useMesActivitesParColonne';
+import { useMesDisponibilitesJournee } from '../../hooks/useMesDisponibilitesJournee';
 import { useDeclarerDisponibiliteActivite } from '../../hooks/useDeclarerDisponibiliteActivite';
 import { useDeclarerDisponibiliteJournee } from '../../hooks/useDeclarerDisponibiliteJournee';
-import { useDisponibilitesEffectif } from '../../hooks/useDisponibilitesEffectif';
-import { useMesDisponibilitesJournee } from '../../hooks/useMesDisponibilitesJournee';
-import { useProchainesJourneesAvecActivites } from '../../hooks/useProchainesJourneesAvecActivites';
 import { useSupprimerDisponibiliteActivite } from '../../hooks/useSupprimerDisponibiliteActivite';
-import type { DisponibilitesEffectifResponseDto } from '../../api/disponibilites';
+import type { ActiviteColonneDto, DisponibiliteJourneeDto } from '../../api/disponibilites';
 
-vi.mock('../../auth/AuthContext');
+vi.mock('../../hooks/useMesActivitesParColonne');
+vi.mock('../../hooks/useMesDisponibilitesJournee');
 vi.mock('../../hooks/useDeclarerDisponibiliteActivite');
 vi.mock('../../hooks/useDeclarerDisponibiliteJournee');
-vi.mock('../../hooks/useDisponibilitesEffectif');
-vi.mock('../../hooks/useMesDisponibilitesJournee');
-vi.mock('../../hooks/useProchainesJourneesAvecActivites');
 vi.mock('../../hooks/useSupprimerDisponibiliteActivite');
 
-const user = {
-  id: 'u1',
-  providerId: 'joueur@example.com',
-  provider: 'dev',
-  displayName: 'Jean Joueur',
-  role: 'joueur' as const,
-};
-
-function mockAuth(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
-  vi.mocked(useAuth).mockReturnValue({
-    user,
-    loading: false,
-    googleLoginUrl: 'http://localhost:3020/auth/google',
-    devLogin: vi.fn(),
-    refresh: vi.fn(),
-    logout: vi.fn(),
+function makeActivite(overrides: Partial<ActiviteColonneDto> = {}): ActiviteColonneDto {
+  return {
+    id: 'a1',
+    date: '2026-07-08',
+    heureConvocation: '14:00',
+    heureDebut: '15:00',
+    label: 'Match A',
+    type: 'match',
     ...overrides,
-  });
+  };
 }
 
-function mockProchainesJournees(
-  overrides: Partial<ReturnType<typeof useProchainesJourneesAvecActivites>> = {},
-) {
-  vi.mocked(useProchainesJourneesAvecActivites).mockReturnValue({
-    data: undefined,
+function mockColonnes(overrides: Partial<ReturnType<typeof useMesActivitesParColonne>>) {
+  vi.mocked(useMesActivitesParColonne).mockReturnValue({
+    aTraiter: [],
+    renseignees: [],
     isLoading: false,
     isError: false,
     ...overrides,
   });
 }
 
-function mockMesDisponibilitesJournee(
-  overrides: Partial<ReturnType<typeof useMesDisponibilitesJournee>> = {},
-) {
+function mockDispoJournee(overrides: Partial<ReturnType<typeof useMesDisponibilitesJournee>> = {}) {
   vi.mocked(useMesDisponibilitesJournee).mockReturnValue({
-    data: undefined,
+    data: [],
     isLoading: false,
     isError: false,
     ...overrides,
   } as ReturnType<typeof useMesDisponibilitesJournee>);
 }
 
-function mockDisponibilitesEffectif(
-  overrides: Partial<ReturnType<typeof useDisponibilitesEffectif>> = {},
-) {
-  vi.mocked(useDisponibilitesEffectif).mockReturnValue({
-    data: undefined,
-    isLoading: false,
-    isError: false,
-    ...overrides,
-  } as ReturnType<typeof useDisponibilitesEffectif>);
+function mockMutationHooks() {
+  const declarerActiviteMutate = vi.fn();
+  const declarerJourneeMutate = vi.fn();
+  const supprimerMutate = vi.fn();
+
+  vi.mocked(useDeclarerDisponibiliteActivite).mockReturnValue({
+    mutate: declarerActiviteMutate,
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeclarerDisponibiliteActivite>);
+
+  vi.mocked(useDeclarerDisponibiliteJournee).mockReturnValue({
+    mutate: declarerJourneeMutate,
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeclarerDisponibiliteJournee>);
+
+  vi.mocked(useSupprimerDisponibiliteActivite).mockReturnValue({
+    mutate: supprimerMutate,
+    isPending: false,
+  } as unknown as ReturnType<typeof useSupprimerDisponibiliteActivite>);
+
+  return { declarerActiviteMutate, declarerJourneeMutate, supprimerMutate };
 }
 
-const activiteUnique = {
-  id: 'a1',
-  date: '2026-07-01',
-  heureConvocation: '14:00',
-  heureDebut: '15:00',
-  label: 'Match unique',
-  type: 'match' as const,
-};
-
-const activiteMulti1 = {
-  id: 'a2',
-  date: '2026-07-08',
-  heureConvocation: '09:00',
-  heureDebut: '10:00',
-  label: 'Match du matin',
-  type: 'match' as const,
-};
-
-const activiteMulti2 = {
-  id: 'a3',
-  date: '2026-07-08',
-  heureConvocation: '17:00',
-  heureDebut: '18:00',
-  label: 'AG',
-  type: 'autre' as const,
-};
-
 describe('MesDisponibilitesPage', () => {
-  let declarerJourneeMutate: ReturnType<typeof vi.fn>;
-  let declarerActiviteMutate: ReturnType<typeof vi.fn>;
-  let supprimerActiviteMutate: ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
-    vi.mocked(useAuth).mockReset();
-    vi.mocked(useProchainesJourneesAvecActivites).mockReset();
+    vi.mocked(useMesActivitesParColonne).mockReset();
     vi.mocked(useMesDisponibilitesJournee).mockReset();
-    vi.mocked(useDisponibilitesEffectif).mockReset();
-
-    declarerJourneeMutate = vi.fn();
-    declarerActiviteMutate = vi.fn();
-    supprimerActiviteMutate = vi.fn();
-
-    vi.mocked(useDeclarerDisponibiliteJournee).mockReturnValue({
-      mutate: declarerJourneeMutate,
-      isPending: false,
-    } as unknown as ReturnType<typeof useDeclarerDisponibiliteJournee>);
-    vi.mocked(useDeclarerDisponibiliteActivite).mockReturnValue({
-      mutate: declarerActiviteMutate,
-      isPending: false,
-    } as unknown as ReturnType<typeof useDeclarerDisponibiliteActivite>);
-    vi.mocked(useSupprimerDisponibiliteActivite).mockReturnValue({
-      mutate: supprimerActiviteMutate,
-      isPending: false,
-    } as unknown as ReturnType<typeof useSupprimerDisponibiliteActivite>);
-
-    mockAuth();
-    mockMesDisponibilitesJournee();
-    mockDisponibilitesEffectif();
+    vi.mocked(useDeclarerDisponibiliteActivite).mockReset();
+    vi.mocked(useDeclarerDisponibiliteJournee).mockReset();
+    vi.mocked(useSupprimerDisponibiliteActivite).mockReset();
+    mockMutationHooks();
+    mockDispoJournee();
   });
 
-  it('affiche le message de chargement pendant le chargement des journées', () => {
-    mockProchainesJournees({ isLoading: true });
+  it('affiche le message de chargement quand isLoading est vrai, sans colonnes', () => {
+    mockColonnes({ isLoading: true });
 
     render(<MesDisponibilitesPage />);
 
-    expect(screen.getByText('Chargement des journées à venir…')).toBeInTheDocument();
+    expect(screen.getByText(/Chargement des activités à venir/)).toBeInTheDocument();
+    expect(screen.queryByText('À renseigner')).not.toBeInTheDocument();
   });
 
-  it("affiche un message d'erreur quand le chargement des journées échoue", () => {
-    mockProchainesJournees({ isError: true });
+  it("affiche un message d'erreur quand isError est vrai, sans colonnes", () => {
+    mockColonnes({ isError: true });
 
     render(<MesDisponibilitesPage />);
 
-    expect(screen.getByText('Impossible de charger les journées à venir.')).toBeInTheDocument();
+    expect(screen.getByText(/Impossible de charger les activités à venir/)).toBeInTheDocument();
+    expect(screen.queryByText('À renseigner')).not.toBeInTheDocument();
   });
 
-  it("affiche le message d'absence d'activité quand la liste de journées est vide", () => {
-    mockProchainesJournees({ data: [] });
+  it('affiche les deux colonnes "À renseigner" et "Mes disponibilités" avec leurs lignes respectives', () => {
+    const activiteATraiter = makeActivite({ id: 'a1', label: 'AG annuelle', date: '2026-07-05' });
+    const activiteRenseignee = makeActivite({ id: 'a2', label: 'Match B', date: '2026-07-10' });
 
-    render(<MesDisponibilitesPage />);
-
-    expect(screen.getByText('Aucune activité à venir.')).toBeInTheDocument();
-  });
-
-  it('affiche un JourneeDisponibiliteControl par journée à venir', () => {
-    mockProchainesJournees({
-      data: [
-        { date: '2026-07-01', activites: [activiteUnique] },
-        { date: '2026-07-08', activites: [activiteMulti1, activiteMulti2] },
+    mockColonnes({
+      aTraiter: [
+        { activite: activiteATraiter, disponibilite: { statut: 'autre', source: 'aucune' } },
+      ],
+      renseignees: [
+        {
+          activite: activiteRenseignee,
+          disponibilite: { statut: 'present', source: 'journee' },
+        },
       ],
     });
 
     render(<MesDisponibilitesPage />);
 
-    expect(screen.getAllByText('2026-07-01')).toHaveLength(2); // titre de section + JourneeDisponibiliteControl
-    expect(screen.getAllByText('2026-07-08')).toHaveLength(2);
+    expect(screen.getByRole('heading', { level: 2, name: 'À renseigner' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Mes disponibilités' })).toBeInTheDocument();
+    expect(screen.getByText('AG annuelle')).toBeInTheDocument();
+    expect(screen.getByText('Match B')).toBeInTheDocument();
   });
 
-  it('affiche un ActiviteOverrideControl par activité, y compris quand une journée a une seule activité', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
+  it('ouvre la modale avec les bonnes props au clic sur une carte de la colonne "À renseigner"', () => {
+    const activiteATraiter = makeActivite({ id: 'a1', label: 'AG annuelle' });
+
+    mockColonnes({
+      aTraiter: [
+        { activite: activiteATraiter, disponibilite: { statut: 'autre', source: 'aucune' } },
+      ],
     });
 
     render(<MesDisponibilitesPage />);
 
-    expect(screen.getByText(/15:00 — Match unique \(match\)/)).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('AG annuelle'));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Le titre de la modale reprend le label de l'activité sélectionnée.
+    expect(screen.getAllByText('AG annuelle').length).toBeGreaterThan(0);
   });
 
-  it('affiche un ActiviteOverrideControl par activité pour une journée multi-activités', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-08', activites: [activiteMulti1, activiteMulti2] }],
+  it('ouvre la modale avec les bonnes props au clic sur une carte de la colonne "Mes disponibilités"', () => {
+    const activiteRenseignee = makeActivite({ id: 'a2', label: 'Match B' });
+
+    mockColonnes({
+      renseignees: [
+        {
+          activite: activiteRenseignee,
+          disponibilite: { statut: 'present', source: 'journee' },
+        },
+      ],
     });
 
     render(<MesDisponibilitesPage />);
 
-    expect(screen.getByText(/10:00 — Match du matin \(match\)/)).toBeInTheDocument();
-    expect(screen.getByText(/18:00 — AG \(autre\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Match B'));
+
+    const dialog = screen.getByRole('dialog');
+    // Pré-remplissage : statut "present" actif dans le sélecteur de la modale (scope sur le dialog
+    // pour éviter la collision avec le badge "Présent" affiché sur la carte de la colonne).
+    expect(within(dialog).getByText('Présent').closest('button')).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('préremplit JourneeDisponibiliteControl avec la disponibilité de journée déjà déclarée pour cette date', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
-    });
-    mockMesDisponibilitesJournee({
-      data: [{ id: 'd1', utilisateurId: 'u1', date: '2026-07-01', statut: 'absent', commentaire: 'Blessé' }],
+  it('ferme la modale après un clic sur "Annuler"', () => {
+    const activiteATraiter = makeActivite({ id: 'a1', label: 'AG annuelle' });
+    mockColonnes({
+      aTraiter: [
+        { activite: activiteATraiter, disponibilite: { statut: 'autre', source: 'aucune' } },
+      ],
     });
 
     render(<MesDisponibilitesPage />);
+    fireEvent.click(screen.getByText('AG annuelle'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    const selects = screen.getAllByLabelText('Disponibilité');
-    // Premier select = JourneeDisponibiliteControl (le second appartient à ActiviteOverrideControl).
-    expect(selects[0]).toHaveValue('absent');
-    expect(screen.getAllByLabelText('Commentaire')[0]).toHaveValue('Blessé');
+    fireEvent.click(screen.getByText('Annuler'));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('appelle useDeclarerDisponibiliteJournee.mutate avec date/statut/commentaire au clic sur Enregistrer de la dispo de journée', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
+  describe('non-régression saisie-disponibilite-journee / saisie-disponibilite-activite', () => {
+    it('saisie initiale via journée : clic sur une activité non renseignée puis Enregistrer appelle useDeclarerDisponibiliteJournee sur activite.date', () => {
+      const { declarerJourneeMutate } = mockMutationHooks();
+      const activiteATraiter = makeActivite({ id: 'a1', label: 'AG annuelle', date: '2026-07-05' });
+      mockColonnes({
+        aTraiter: [
+          { activite: activiteATraiter, disponibilite: { statut: 'autre', source: 'aucune' } },
+        ],
+      });
+
+      render(<MesDisponibilitesPage />);
+      fireEvent.click(screen.getByText('AG annuelle'));
+      fireEvent.click(screen.getByText('Disponible').closest('button')!);
+      fireEvent.click(screen.getByText('Enregistrer'));
+
+      expect(declarerJourneeMutate).toHaveBeenCalledWith(
+        { date: '2026-07-05', dto: { statut: 'disponible', commentaire: undefined } },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
     });
 
-    render(<MesDisponibilitesPage />);
+    it("saisie initiale via activité : cocher le toggle d'affinage puis Enregistrer appelle useDeclarerDisponibiliteActivite sur activite.id", () => {
+      const { declarerActiviteMutate } = mockMutationHooks();
+      const activiteATraiter = makeActivite({ id: 'a1', label: 'AG annuelle', date: '2026-07-05' });
+      mockColonnes({
+        aTraiter: [
+          { activite: activiteATraiter, disponibilite: { statut: 'autre', source: 'aucune' } },
+        ],
+      });
 
-    const commentaireJournee = screen.getAllByLabelText('Commentaire')[0];
-    fireEvent.change(commentaireJournee, { target: { value: 'Je viens' } });
-    fireEvent.click(screen.getAllByText('Enregistrer')[0]);
+      render(<MesDisponibilitesPage />);
+      fireEvent.click(screen.getByText('AG annuelle'));
+      fireEvent.click(screen.getByRole('checkbox'));
+      fireEvent.click(screen.getByText('Absent').closest('button')!);
+      fireEvent.click(screen.getByText('Enregistrer'));
 
-    expect(declarerJourneeMutate).toHaveBeenCalledWith({
-      date: '2026-07-01',
-      dto: { statut: 'present', commentaire: 'Je viens' },
+      expect(declarerActiviteMutate).toHaveBeenCalledWith(
+        { activiteId: 'a1', dto: { statut: 'absent', commentaire: undefined } },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
     });
-  });
 
-  it('appelle useDeclarerDisponibiliteActivite.mutate avec activiteId/statut/commentaire au clic sur Enregistrer du contrôle activité', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
-    });
-
-    render(<MesDisponibilitesPage />);
-
-    const commentaireActivite = screen.getAllByLabelText('Commentaire')[1];
-    fireEvent.change(commentaireActivite, { target: { value: 'Présent au match' } });
-    fireEvent.click(screen.getAllByText('Enregistrer')[1]);
-
-    expect(declarerActiviteMutate).toHaveBeenCalledWith({
-      activiteId: 'a1',
-      dto: { statut: 'present', commentaire: 'Présent au match' },
-    });
-  });
-
-  it('calcule statutJourneeParDefaut depuis la dispo de journée et le transmet à ActiviteOverrideControl (bouton Retirer affiché en conséquence quand une surcharge existe)', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
-    });
-    mockMesDisponibilitesJournee({
-      data: [{ id: 'd1', utilisateurId: 'u1', date: '2026-07-01', statut: 'disponible' }],
-    });
-    mockDisponibilitesEffectif({
-      data: {
-        activites: [activiteUnique],
-        joueurs: [
+    it('édition d\'une dispo de journée existante : pré-remplit depuis la disponibilité effective et soumet via useDeclarerDisponibiliteJournee', () => {
+      const { declarerJourneeMutate } = mockMutationHooks();
+      const activiteRenseignee = makeActivite({ id: 'a2', label: 'Match B', date: '2026-07-10' });
+      mockColonnes({
+        renseignees: [
           {
-            utilisateurId: 'u1',
-            displayName: 'Jean Joueur',
-            disponibilites: {
-              a1: { statut: 'absent', commentaire: 'Blessé', source: 'activite' },
-            },
+            activite: activiteRenseignee,
+            disponibilite: { statut: 'disponible', source: 'journee', commentaire: 'Dispo' },
           },
         ],
-      } as DisponibilitesEffectifResponseDto,
+      });
+
+      render(<MesDisponibilitesPage />);
+      fireEvent.click(screen.getByText('Match B'));
+
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByText('Disponible').closest('button')).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+
+      fireEvent.click(within(dialog).getByText('Présent').closest('button')!);
+      fireEvent.click(screen.getByText('Enregistrer'));
+
+      expect(declarerJourneeMutate).toHaveBeenCalledWith(
+        { date: '2026-07-10', dto: { statut: 'present', commentaire: 'Dispo' } },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
     });
 
-    render(<MesDisponibilitesPage />);
-
-    expect(screen.getByText(/Retirer la surcharge \(revenir à Disponible\)/)).toBeInTheDocument();
-  });
-
-  it('appelle useSupprimerDisponibiliteActivite.mutate avec activiteId au clic sur "Retirer la surcharge"', () => {
-    mockProchainesJournees({
-      data: [{ date: '2026-07-01', activites: [activiteUnique] }],
-    });
-    mockDisponibilitesEffectif({
-      data: {
-        activites: [activiteUnique],
-        joueurs: [
+    it("édition d'une surcharge d'activité existante : pré-remplit depuis la surcharge et soumet via useDeclarerDisponibiliteActivite, case cochée", () => {
+      const { declarerActiviteMutate } = mockMutationHooks();
+      const activiteRenseignee = makeActivite({ id: 'a2', label: 'Match B', date: '2026-07-10' });
+      mockColonnes({
+        renseignees: [
           {
-            utilisateurId: 'u1',
-            displayName: 'Jean Joueur',
-            disponibilites: {
-              a1: { statut: 'absent', source: 'activite' },
-            },
+            activite: activiteRenseignee,
+            disponibilite: { statut: 'absent', source: 'activite', commentaire: 'Blessé' },
           },
         ],
-      } as DisponibilitesEffectifResponseDto,
+      });
+
+      render(<MesDisponibilitesPage />);
+      fireEvent.click(screen.getByText('Match B'));
+
+      expect(screen.getByRole('checkbox')).toBeChecked();
+
+      fireEvent.click(screen.getByText('Présent').closest('button')!);
+      fireEvent.click(screen.getByText('Enregistrer'));
+
+      expect(declarerActiviteMutate).toHaveBeenCalledWith(
+        { activiteId: 'a2', dto: { statut: 'present', commentaire: 'Blessé' } },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
     });
 
-    render(<MesDisponibilitesPage />);
+    it("retrait d'une surcharge d'activité : décocher la case puis Enregistrer appelle useSupprimerDisponibiliteActivite sur activite.id (retour à la valeur de journée par défaut)", () => {
+      const { supprimerMutate } = mockMutationHooks();
+      const activiteRenseignee = makeActivite({ id: 'a2', label: 'Match B', date: '2026-07-10' });
+      const dispoJourneeActuelle: DisponibiliteJourneeDto = {
+        id: 'dj-1',
+        utilisateurId: 'user-1',
+        date: '2026-07-10',
+        statut: 'disponible',
+      };
+      mockColonnes({
+        renseignees: [
+          {
+            activite: activiteRenseignee,
+            disponibilite: { statut: 'absent', source: 'activite', commentaire: 'Blessé' },
+          },
+        ],
+      });
+      mockDispoJournee({ data: [dispoJourneeActuelle] } as ReturnType<typeof useMesDisponibilitesJournee>);
 
-    fireEvent.click(screen.getByText(/Retirer la surcharge/));
+      render(<MesDisponibilitesPage />);
+      fireEvent.click(screen.getByText('Match B'));
+      fireEvent.click(screen.getByRole('checkbox'));
+      fireEvent.click(screen.getByText('Enregistrer'));
 
-    expect(supprimerActiviteMutate).toHaveBeenCalledWith({ activiteId: 'a1' });
+      expect(supprimerMutate).toHaveBeenCalledWith(
+        { activiteId: 'a2' },
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      );
+    });
   });
 });

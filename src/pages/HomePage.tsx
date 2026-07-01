@@ -1,10 +1,10 @@
 import { useAuth } from '../auth/AuthContext';
-import { ProchainesActivites } from '../components/home/ProchainesActivites';
-import { useActivites } from '../hooks/useActivites';
+import { ResumeAccueil } from '../components/home/ResumeAccueil';
+import { useResumeAccueil } from '../hooks/useResumeAccueil';
 
 export function HomePage() {
   const { user } = useAuth();
-  const { data, isLoading, isError } = useActivites({ enabled: !!user });
+  const { data, isLoading, isError } = useResumeAccueil({ enabled: !!user });
 
   return (
     <div className="page">
@@ -14,9 +14,9 @@ export function HomePage() {
       {user ? (
         <>
           <p>Connecté en tant que {user.displayName} ({user.role}).</p>
-          {isLoading && <p>Chargement des activités…</p>}
-          {isError && <p>Impossible de charger les activités.</p>}
-          {data && !isLoading && !isError && <ProchainesActivites activites={data} />}
+          {isLoading && <p>Chargement de votre résumé…</p>}
+          {isError && <p>Impossible de charger votre résumé.</p>}
+          {data && !isLoading && !isError && <ResumeAccueil resume={data} />}
         </>
       ) : (
         <p>Connectez-vous pour déclarer vos disponibilités.</p>

@@ -14,6 +14,7 @@ export function useSupprimerDisponibiliteActivite() {
       supprimerDisponibiliteActivite(activiteId, utilisateurId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['disponibilites-effectif'] });
+      void queryClient.invalidateQueries({ queryKey: ['resume-accueil'] });
     },
   });
 }

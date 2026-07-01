@@ -1,0 +1,26 @@
+/*
+ * Design tokens — charte graphique MonASOCFoot (cf. docs/adr/0002-theme-sombre-monasocfoot.md,
+ * qui remplace la palette claire initiale de docs/adr/0001-charte-graphique-monasocfoot.md).
+ * Source unique de vérité pour les couleurs/typographie/rayons utilisés par index.css et layout.css.
+ * Thème sombre façon hockey-tournoi (fond slate très foncé), accent orange conservé comme
+ * couleur de marque du club (« AS Orange »).
+ */
+:root {
+  --color-primary: #ff7900;
+  --color-primary-contrast: #ffffff;
+  --color-secondary: #0f172a;
+  --color-background: #020617;
+  --color-background-alt: #0f172a;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-border: #334155;
+  --color-danger: #f87171;
+
+  --font-family-base: system-ui, sans-serif;
+
+  --radius-base: 8px;
+
+  /* Largeur max partagée entre le bandeau (.app-topbar__inner) et le contenu (.app-layout__main),
+     pour que les deux s'alignent verticalement (cf. docs/specs/applique-le-look-n-feel-...). */
+  --container-max-width: 960px;
+}

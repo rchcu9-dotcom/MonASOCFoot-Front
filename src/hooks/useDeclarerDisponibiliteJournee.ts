@@ -18,6 +18,7 @@ export function useDeclarerDisponibiliteJournee() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['disponibilites-effectif'] });
       void queryClient.invalidateQueries({ queryKey: ['mes-disponibilites-journee'] });
+      void queryClient.invalidateQueries({ queryKey: ['resume-accueil'] });
     },
   });
 }

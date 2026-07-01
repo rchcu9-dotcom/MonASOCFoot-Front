@@ -1,125 +1,60 @@
-import { useAuth } from '../auth/AuthContext';
-import { ActiviteOverrideControl } from '../components/disponibilites/ActiviteOverrideControl';
-import { JourneeDisponibiliteControl } from '../components/disponibilites/JourneeDisponibiliteControl';
-import type { StatutDisponibilite } from '../api/disponibilites';
-import { useDeclarerDisponibiliteActivite } from '../hooks/useDeclarerDisponibiliteActivite';
-import { useDeclarerDisponibiliteJournee } from '../hooks/useDeclarerDisponibiliteJournee';
-import { useDisponibilitesEffectif } from '../hooks/useDisponibilitesEffectif';
+import { useState } from 'react';
+import { DisponibiliteDetailModal } from '../components/disponibilites/DisponibiliteDetailModal';
+import { ColonneActivites } from '../components/disponibilites/ColonneActivites';
+import { useMesActivitesParColonne } from '../hooks/useMesActivitesParColonne';
 import { useMesDisponibilitesJournee } from '../hooks/useMesDisponibilitesJournee';
-import { useProchainesJourneesAvecActivites } from '../hooks/useProchainesJourneesAvecActivites';
-import { useSupprimerDisponibiliteActivite } from '../hooks/useSupprimerDisponibiliteActivite';
 
 /**
- * Page joueur : déclaration de la disponibilité de journée pour les prochaines journées avec
- * activité(s), avec en complément la possibilité d'affiner par activité (cf. décision en
- * autonomie — affichage systématique d'`ActiviteOverrideControl`, y compris pour une date à
- * activité unique).
+ * Page joueur : saisie des disponibilités en deux colonnes — « À renseigner » (aucune dispo
+ * connue) et « Mes disponibilités » (dispo de journée ou d'activité déjà renseignée), cf. spec
+ * `fais-moi-une-proposition-de-saisie-de-mes-dispos-o-colonne-d`.
  */
 export function MesDisponibilitesPage() {
-  const { user } = useAuth();
-  const { data: journees, isLoading: journeesEnChargement, isError: journeesEnErreur } =
-    useProchainesJourneesAvecActivites();
+  const { aTraiter, renseignees, isLoading, isError } = useMesActivitesParColonne();
   const { data: mesDisponibilitesJournee } = useMesDisponibilitesJournee();
-  const { data: effectif } = useDisponibilitesEffectif();
 
-  const declarerDisponibiliteJournee = useDeclarerDisponibiliteJournee();
-  const declarerDisponibiliteActivite = useDeclarerDisponibiliteActivite();
-  const supprimerDisponibiliteActivite = useSupprimerDisponibiliteActivite();
+  const [activiteSelectionneeId, setActiviteSelectionneeId] = useState<string | null>(null);
 
   const disponibiliteJourneeParDate = new Map(
     (mesDisponibilitesJournee ?? []).map((d) => [d.date, d]),
   );
 
-  const ligneUtilisateurConnecte = user
-    ? effectif?.joueurs.find((joueur) => joueur.utilisateurId === user.id)
-    : undefined;
-
-  function handleEnregistrerJournee(
-    date: string,
-    statut: StatutDisponibilite,
-    commentaire?: string,
-  ) {
-    declarerDisponibiliteJournee.mutate({ date, dto: { statut, commentaire } });
-  }
-
-  function handleEnregistrerActivite(
-    activiteId: string,
-    statut: StatutDisponibilite,
-    commentaire?: string,
-  ) {
-    declarerDisponibiliteActivite.mutate({ activiteId, dto: { statut, commentaire } });
-  }
-
-  function handleRetirerSurchargeActivite(activiteId: string) {
-    supprimerDisponibiliteActivite.mutate({ activiteId });
-  }
+  const ligneSelectionnee =
+    aTraiter.find((ligne) => ligne.activite.id === activiteSelectionneeId) ??
+    renseignees.find((ligne) => ligne.activite.id === activiteSelectionneeId);
 
   return (
-    <div className="page">
+    <div className="page page--dispos">
       <h1>Mes disponibilités</h1>
 
-      {journeesEnChargement && <p>Chargement des journées à venir…</p>}
-      {journeesEnErreur && <p>Impossible de charger les journées à venir.</p>}
+      {isLoading && <p>Chargement des activités à venir…</p>}
+      {isError && <p>Impossible de charger les activités à venir.</p>}
 
-      {journees && journees.length === 0 && <p>Aucune activité à venir.</p>}
+      {!isLoading && !isError && (
+        <div className="dispos-colonnes">
+          <ColonneActivites
+            titre="À renseigner"
+            lignes={aTraiter}
+            onSelect={setActiviteSelectionneeId}
+            messageVide="Aucune disponibilité à renseigner."
+          />
+          <ColonneActivites
+            titre="Mes disponibilités"
+            lignes={renseignees}
+            onSelect={setActiviteSelectionneeId}
+            messageVide="Rien à signaler."
+          />
+        </div>
+      )}
 
-      {journees?.map((journee) => {
-        const disponibiliteJournee = disponibiliteJourneeParDate.get(journee.date);
-
-        return (
-          <section key={journee.date} className="mes-disponibilites-page__journee">
-            <h2>{journee.date}</h2>
-
-            <JourneeDisponibiliteControl
-              date={journee.date}
-              disponibiliteActuelle={
-                disponibiliteJournee
-                  ? {
-                      statut: disponibiliteJournee.statut,
-                      commentaire: disponibiliteJournee.commentaire,
-                    }
-                  : undefined
-              }
-              onEnregistrer={(statut, commentaire) =>
-                handleEnregistrerJournee(journee.date, statut, commentaire)
-              }
-              enregistrementEnCours={declarerDisponibiliteJournee.isPending}
-            />
-
-            {journee.activites.map((activite) => {
-              const disponibiliteEffective =
-                ligneUtilisateurConnecte?.disponibilites[activite.id];
-              const surchargeActuelle =
-                disponibiliteEffective?.source === 'activite'
-                  ? {
-                      statut: disponibiliteEffective.statut,
-                      commentaire: disponibiliteEffective.commentaire,
-                    }
-                  : undefined;
-
-              return (
-                <ActiviteOverrideControl
-                  key={activite.id}
-                  activite={activite}
-                  surchargeActuelle={surchargeActuelle}
-                  statutJourneeParDefaut={
-                    disponibiliteJournee?.statut ??
-                    (disponibiliteEffective?.source === 'journee'
-                      ? disponibiliteEffective.statut
-                      : undefined)
-                  }
-                  onEnregistrer={(statut, commentaire) =>
-                    handleEnregistrerActivite(activite.id, statut, commentaire)
-                  }
-                  onRetirerSurcharge={() => handleRetirerSurchargeActivite(activite.id)}
-                  enregistrementEnCours={declarerDisponibiliteActivite.isPending}
-                  suppressionEnCours={supprimerDisponibiliteActivite.isPending}
-                />
-              );
-            })}
-          </section>
-        );
-      })}
+      {ligneSelectionnee && (
+        <DisponibiliteDetailModal
+          activite={ligneSelectionnee.activite}
+          disponibiliteEffective={ligneSelectionnee.disponibilite}
+          dispoJourneeActuelle={disponibiliteJourneeParDate.get(ligneSelectionnee.activite.date)}
+          onClose={() => setActiviteSelectionneeId(null)}
+        />
+      )}
     </div>
   );
 }

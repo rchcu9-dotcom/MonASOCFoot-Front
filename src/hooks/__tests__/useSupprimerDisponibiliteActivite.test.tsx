@@ -61,6 +61,21 @@ describe('useSupprimerDisponibiliteActivite', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['disponibilites-effectif'] });
   });
 
+  it('invalide aussi la queryKey ["resume-accueil"] après une suppression réussie (popup réutilisée sur la page Accueil)', async () => {
+    vi.mocked(supprimerDisponibiliteActivite).mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderHook(() => useSupprimerDisponibiliteActivite(), {
+      wrapper: makeWrapper(queryClient),
+    });
+
+    result.current.mutate({ activiteId: 'activite-1' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['resume-accueil'] });
+  });
+
   it('expose isError quand supprimerDisponibiliteActivite rejette (ex: 404 aucune surcharge)', async () => {
     vi.mocked(supprimerDisponibiliteActivite).mockRejectedValue(
       new Error("Aucune surcharge de disponibilité pour l'activité activite-1"),

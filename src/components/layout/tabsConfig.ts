@@ -16,18 +16,27 @@ export const tabsConfig: TabConfig[] = [
     label: 'Mes disponibilités',
     shortLabel: 'Mes dispos',
     path: '/mes-disponibilites',
+    primary: true,
   },
   {
     id: 'disponibilites-effectif',
     label: 'Disponibilités de l\'effectif',
     shortLabel: 'Disponibilités',
     path: '/disponibilites/effectif',
+    primary: true,
   },
   {
     id: 'admin-activites',
     label: 'Gestion des activités',
     shortLabel: 'Activités',
     path: '/admin/activites',
+    requiresAdmin: true,
+  },
+  {
+    id: 'admin-planification-activites',
+    label: 'Planification des activités',
+    shortLabel: 'Planification',
+    path: '/admin/activites/planification',
     requiresAdmin: true,
   },
   {

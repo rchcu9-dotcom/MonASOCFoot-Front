@@ -7,11 +7,12 @@ const API_BASE_URL =
 
 export type TypeActivite = 'match' | 'autre';
 export type SourceActivite = 'manuel' | 'import';
+export type EquipeClub = 'A' | 'B' | 'Vet';
 
 export interface ActiviteDto {
   id: string;
-  /** ISO 8601 — format yyyy-mm-dd. */
-  date: string;
+  /** ISO 8601 — format yyyy-mm-dd. Absente pour une activité « sans date ». */
+  date?: string;
   /** Format HH:mm. */
   heureConvocation: string;
   /** Format HH:mm. */
@@ -19,19 +20,38 @@ export interface ActiviteDto {
   label: string;
   type: TypeActivite;
   commentaire?: string;
+  lieu?: string;
   source: SourceActivite;
+  equipe?: EquipeClub;
 }
 
 export interface CreerActiviteInput {
-  date: string;
+  /** Optionnel : une activité peut être créée sans date, à assigner plus tard. */
+  date?: string;
   heureConvocation: string;
   heureDebut: string;
   label: string;
   type: TypeActivite;
   commentaire?: string;
+  lieu?: string;
+  equipe?: EquipeClub;
 }
 
-export type ModifierActiviteInput = Partial<CreerActiviteInput>;
+/**
+ * Tri-état sur `date`/`equipe` : champ absent (`undefined`) = non modifié, `null` = retrait
+ * explicite (ex. déplacement colonne droite → gauche), valeur = assignation.
+ */
+export type ModifierActiviteInput = Partial<
+  Omit<CreerActiviteInput, 'date' | 'equipe'>
+> & {
+  date?: string | null;
+  equipe?: EquipeClub | null;
+};
+
+export interface PlanificationActivitesDto {
+  sansDate: ActiviteDto[];
+  calendrier: ActiviteDto[];
+}
 
 export interface ImportMatchsResultatDto {
   matchsRecuperes: number;
@@ -55,6 +75,18 @@ async function parseJsonOrThrow<T>(res: Response, messageErreur: string): Promis
 export async function fetchActivites(): Promise<ActiviteDto[]> {
   const res = await authFetch(`${API_BASE_URL}/activites`);
   return parseJsonOrThrow<ActiviteDto[]>(res, 'Erreur lors de la récupération des activités');
+}
+
+/** `semaines` borne la fenêtre temporelle de `calendrier` (8 par défaut côté back). */
+export async function fetchPlanificationActivites(
+  semaines?: number,
+): Promise<PlanificationActivitesDto> {
+  const query = semaines ? `?semaines=${semaines}` : '';
+  const res = await authFetch(`${API_BASE_URL}/activites/planification${query}`);
+  return parseJsonOrThrow<PlanificationActivitesDto>(
+    res,
+    'Erreur lors de la récupération de la planification des activités',
+  );
 }
 
 export async function creerActivite(dto: CreerActiviteInput): Promise<ActiviteDto> {

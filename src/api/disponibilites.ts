@@ -1,4 +1,5 @@
 import { authFetch } from './authFetch';
+import type { EquipeClub } from './activites';
 
 declare const __APP_API_BASE_URL__: string | undefined;
 
@@ -28,6 +29,8 @@ export interface ActiviteColonneDto {
   heureDebut: string;
   label: string;
   type: TypeActivite;
+  commentaire?: string;
+  equipe?: EquipeClub;
 }
 
 export interface DisponibilitesEffectifResponseDto {
@@ -153,5 +156,35 @@ export async function fetchMesDisponibilitesJournee(): Promise<DisponibiliteJour
   return parseJsonOrThrow<DisponibiliteJourneeDto[]>(
     res,
     'Erreur lors de la récupération de mes disponibilités de journée',
+  );
+}
+
+export interface ActiviteAvecDisponibiliteDto {
+  activite: ActiviteColonneDto;
+  disponibilite: DisponibiliteEffectiveDto;
+}
+
+export interface ProchaineDateAccueilDto {
+  date: string;
+  activites: ActiviteAvecDisponibiliteDto[];
+}
+
+export interface TableauDeBordAccueilDto {
+  totalAVenir: number;
+  renseigneesAVenir: number;
+  pourcentageRenseignement: number;
+}
+
+export interface ResumeAccueilDto {
+  dernierePassee: ActiviteAvecDisponibiliteDto | null;
+  prochainesDates: ProchaineDateAccueilDto[];
+  tableauDeBord: TableauDeBordAccueilDto;
+}
+
+export async function fetchResumeAccueil(): Promise<ResumeAccueilDto> {
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/resume-accueil`);
+  return parseJsonOrThrow<ResumeAccueilDto>(
+    res,
+    'Erreur lors de la récupération du résumé de la page Accueil',
   );
 }

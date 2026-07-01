@@ -2,20 +2,35 @@ import { describe, it, expect } from 'vitest';
 import { tabsConfig } from '../tabsConfig';
 
 describe('tabsConfig', () => {
-  it('exposes the Accueil tab as the only primary entry, pointing at the root route', () => {
-    const accueil = tabsConfig.find((tab) => tab.id === 'accueil');
-
-    expect(accueil).toEqual({ id: 'accueil', label: 'Accueil', shortLabel: 'Accueil', path: '/', primary: true });
-    expect(tabsConfig.filter((tab) => tab.primary)).toEqual([accueil]);
+  it('exposes exactly 3 primary entries, in this order: Accueil, Mes disponibilités, Disponibilités de l\'effectif', () => {
+    expect(tabsConfig.filter((tab) => tab.primary).map((tab) => tab.id)).toEqual([
+      'accueil',
+      'mes-disponibilites',
+      'disponibilites-effectif',
+    ]);
   });
 
   it('does not mark Accueil as admin-only', () => {
     const accueil = tabsConfig.find((tab) => tab.id === 'accueil');
 
+    expect(accueil).toEqual({ id: 'accueil', label: 'Accueil', shortLabel: 'Accueil', path: '/', primary: true });
     expect(accueil?.requiresAdmin).toBeFalsy();
   });
 
-  it('exposes the "disponibilites-effectif" tab as a secondary, non-admin entry', () => {
+  it('exposes the "mes-disponibilites" tab as a primary, non-admin entry', () => {
+    const mesDispos = tabsConfig.find((tab) => tab.id === 'mes-disponibilites');
+
+    expect(mesDispos).toEqual({
+      id: 'mes-disponibilites',
+      label: 'Mes disponibilités',
+      shortLabel: 'Mes dispos',
+      path: '/mes-disponibilites',
+      primary: true,
+    });
+    expect(mesDispos?.requiresAdmin).toBeFalsy();
+  });
+
+  it('exposes the "disponibilites-effectif" tab as a primary, non-admin entry', () => {
     const effectif = tabsConfig.find((tab) => tab.id === 'disponibilites-effectif');
 
     expect(effectif).toEqual({
@@ -23,8 +38,8 @@ describe('tabsConfig', () => {
       label: "Disponibilités de l'effectif",
       shortLabel: 'Disponibilités',
       path: '/disponibilites/effectif',
+      primary: true,
     });
-    expect(effectif?.primary).toBeFalsy();
     expect(effectif?.requiresAdmin).toBeFalsy();
   });
 

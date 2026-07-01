@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { ActiviteDto, ImportMatchsResultatDto } from '../api/activites';
-import { ActiviteForm, type ActiviteFormValues } from '../components/activites/ActiviteForm';
+import { Link } from 'react-router-dom';
+import type { ActiviteDto, CreerActiviteInput, ImportMatchsResultatDto } from '../api/activites';
+import { ActiviteForm } from '../components/activites/ActiviteForm';
 import { ActivitesList } from '../components/activites/ActivitesList';
 import { ConfirmDeleteDialog } from '../components/activites/ConfirmDeleteDialog';
 import { useActivites } from '../hooks/useActivites';
@@ -40,7 +41,7 @@ export function AdminActivitesPage() {
     setActiviteEnEdition(null);
   }
 
-  function handleSubmit(values: ActiviteFormValues) {
+  function handleSubmit(values: CreerActiviteInput) {
     setErreur(null);
     if (activiteEnEdition) {
       modifierActivite.mutate(
@@ -78,6 +79,12 @@ export function AdminActivitesPage() {
   return (
     <div className="page">
       <h1>Gestion des activités</h1>
+
+      <p>
+        <Link to="/admin/activites/planification">
+          Accéder à la planification des activités (glisser-déposer)
+        </Link>
+      </p>
 
       {!formulaireOuvert && (
         <button type="button" onClick={ouvrirCreation}>

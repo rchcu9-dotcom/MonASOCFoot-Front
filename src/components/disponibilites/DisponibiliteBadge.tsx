@@ -1,8 +1,5 @@
 import type { DisponibiliteEffectiveDto } from '../../api/disponibilites';
-import {
-  STATUT_DISPONIBILITE_COLORS as COLORS,
-  STATUT_DISPONIBILITE_LABELS as LABELS,
-} from './statutDisponibilite.constants';
+import { StatutBadge } from './StatutBadge';
 
 interface Props {
   disponibilite: DisponibiliteEffectiveDto;
@@ -15,12 +12,8 @@ export function DisponibiliteBadge({ disponibilite }: Props) {
   }
 
   return (
-    <span
-      className="disponibilite-badge"
-      style={{ color: COLORS[disponibilite.statut] }}
-      title={disponibilite.commentaire}
-    >
-      {LABELS[disponibilite.statut]}
+    <span className="disponibilite-badge" title={disponibilite.commentaire}>
+      <StatutBadge statut={disponibilite.statut} />
       {disponibilite.source === 'activite' ? ' *' : ''}
     </span>
   );

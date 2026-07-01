@@ -1,0 +1,62 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import type { ResumeAccueilDto } from '../../api/disponibilites';
+import { useMesDisponibilitesJournee } from '../../hooks/useMesDisponibilitesJournee';
+import { DisponibiliteDetailModal } from '../disponibilites/DisponibiliteDetailModal';
+import { DerniereActivitePassee } from './DerniereActivitePassee';
+import { ProchainesDatesActivites } from './ProchainesDatesActivites';
+import { TableauDeBordAccueil } from './TableauDeBordAccueil';
+
+interface Props {
+  resume: ResumeAccueilDto;
+}
+
+/**
+ * Tableau de bord personnel de la page Accueil : dernière activité passée, 3 prochaines dates,
+ * indicateurs. Orchestre l'ouverture de `DisponibiliteDetailModal` (réutilisée telle quelle,
+ * cf. `MesDisponibilitesPage`) au clic sur une activité.
+ */
+export function ResumeAccueil({ resume }: Props) {
+  const { data: mesDisponibilitesJournee } = useMesDisponibilitesJournee();
+  const [activiteSelectionneeId, setActiviteSelectionneeId] = useState<string | null>(null);
+
+  const disponibiliteJourneeParDate = new Map(
+    (mesDisponibilitesJournee ?? []).map((d) => [d.date, d]),
+  );
+
+  const toutesLesLignes = [
+    ...(resume.dernierePassee ? [resume.dernierePassee] : []),
+    ...resume.prochainesDates.flatMap((prochaineDate) => prochaineDate.activites),
+  ];
+
+  const ligneSelectionnee = toutesLesLignes.find(
+    (ligne) => ligne.activite.id === activiteSelectionneeId,
+  );
+
+  return (
+    <div className="resume-accueil">
+      <DerniereActivitePassee
+        dernierePassee={resume.dernierePassee}
+        onSelect={setActiviteSelectionneeId}
+      />
+      <ProchainesDatesActivites
+        prochainesDates={resume.prochainesDates}
+        onSelect={setActiviteSelectionneeId}
+      />
+      <TableauDeBordAccueil tableauDeBord={resume.tableauDeBord} />
+
+      <p>
+        <Link to="/mes-disponibilites">Voir toutes mes disponibilités</Link>
+      </p>
+
+      {ligneSelectionnee && (
+        <DisponibiliteDetailModal
+          activite={ligneSelectionnee.activite}
+          disponibiliteEffective={ligneSelectionnee.disponibilite}
+          dispoJourneeActuelle={disponibiliteJourneeParDate.get(ligneSelectionnee.activite.date)}
+          onClose={() => setActiviteSelectionneeId(null)}
+        />
+      )}
+    </div>
+  );
+}

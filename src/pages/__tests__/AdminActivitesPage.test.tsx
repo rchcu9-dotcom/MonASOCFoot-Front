@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AdminActivitesPage } from '../AdminActivitesPage';
 import { useActivites } from '../../hooks/useActivites';
 import { useCreerActivite } from '../../hooks/useCreerActivite';
@@ -71,7 +72,7 @@ describe('AdminActivitesPage', () => {
   it('affiche le message de chargement pendant isLoading, sans liste', () => {
     mockUseActivites({ isLoading: true });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
     expect(screen.getByText('Chargement des activités…')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
@@ -80,7 +81,7 @@ describe('AdminActivitesPage', () => {
   it("affiche un message d'erreur quand isError est vrai", () => {
     mockUseActivites({ isError: true });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
     expect(screen.getByText('Impossible de charger les activités.')).toBeInTheDocument();
   });
@@ -88,16 +89,27 @@ describe('AdminActivitesPage', () => {
   it('affiche la liste des activités et le bouton "Nouvelle activité" en succès', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Nouvelle activité' })).toBeInTheDocument();
   });
 
+  it('affiche un lien réciproque vers la page de planification', () => {
+    mockUseActivites({ data: [] });
+
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
+
+    const lien = screen.getByRole('link', {
+      name: 'Accéder à la planification des activités (glisser-déposer)',
+    });
+    expect(lien).toHaveAttribute('href', '/admin/activites/planification');
+  });
+
   it('ouvre le formulaire en mode création quand on clique sur "Nouvelle activité"', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Nouvelle activité' }));
 
     expect(screen.getByRole('button', { name: 'Créer' })).toBeInTheDocument();
@@ -108,9 +120,9 @@ describe('AdminActivitesPage', () => {
     creerMutate.mockImplementation((_values, { onSuccess }) => onSuccess());
     mockUseActivites({ data: [] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Nouvelle activité' }));
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-08-01' } });
+    fireEvent.change(screen.getByLabelText('Date (optionnelle)'), { target: { value: '2026-08-01' } });
     fireEvent.change(screen.getByLabelText('Heure de convocation'), { target: { value: '10:00' } });
     fireEvent.change(screen.getByLabelText('Heure de début'), { target: { value: '11:00' } });
     fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Entraînement' } });
@@ -125,9 +137,9 @@ describe('AdminActivitesPage', () => {
     creerMutate.mockImplementation((_values, { onError }) => onError(new Error('Accès refusé')));
     mockUseActivites({ data: [] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Nouvelle activité' }));
-    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-08-01' } });
+    fireEvent.change(screen.getByLabelText('Date (optionnelle)'), { target: { value: '2026-08-01' } });
     fireEvent.change(screen.getByLabelText('Heure de convocation'), { target: { value: '10:00' } });
     fireEvent.change(screen.getByLabelText('Heure de début'), { target: { value: '11:00' } });
     fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Entraînement' } });
@@ -140,7 +152,7 @@ describe('AdminActivitesPage', () => {
   it('ouvre le formulaire prérempli en mode édition quand on clique sur "Modifier"', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Modifier' }));
 
     expect(screen.getByLabelText('Label')).toHaveValue('Match amical');
@@ -151,7 +163,7 @@ describe('AdminActivitesPage', () => {
     modifierMutate.mockImplementation((_vars, { onSuccess }) => onSuccess());
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Modifier' }));
     fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Nouveau label' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
@@ -165,7 +177,7 @@ describe('AdminActivitesPage', () => {
   it('ouvre une confirmation quand on clique sur "Supprimer", sans appeler la mutation immédiatement', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
 
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
@@ -176,7 +188,7 @@ describe('AdminActivitesPage', () => {
     supprimerMutate.mockImplementation((_id, { onSuccess }) => onSuccess());
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }));
 
@@ -187,7 +199,7 @@ describe('AdminActivitesPage', () => {
   it('annule la suppression sans appeler la mutation quand on clique sur "Annuler" du dialogue', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />);
+    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
 
@@ -199,7 +211,7 @@ describe('AdminActivitesPage', () => {
     it('déclenche useImporterMatchsDistrict quand on clique sur le bouton d\'import', () => {
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
       fireEvent.click(screen.getByRole('button', { name: 'Importer les matchs du district' }));
 
       expect(importerMutate).toHaveBeenCalledWith(undefined, expect.anything());
@@ -216,7 +228,7 @@ describe('AdminActivitesPage', () => {
       importerMutate.mockImplementation((_vars, { onSuccess }) => onSuccess(resultat));
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
       fireEvent.click(screen.getByRole('button', { name: 'Importer les matchs du district' }));
 
       expect(
@@ -237,7 +249,7 @@ describe('AdminActivitesPage', () => {
       importerMutate.mockImplementation((_vars, { onSuccess }) => onSuccess(resultat));
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
       fireEvent.click(screen.getByRole('button', { name: 'Importer les matchs du district' }));
 
       expect(screen.getByText(/Import terminé/).textContent).toContain(
@@ -249,7 +261,7 @@ describe('AdminActivitesPage', () => {
       importerMutate.mockImplementation((_vars, { onError }) => onError(new Error('Import indisponible')));
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
       fireEvent.click(screen.getByRole('button', { name: 'Importer les matchs du district' }));
 
       expect(screen.getByText('Import indisponible')).toBeInTheDocument();
@@ -260,7 +272,7 @@ describe('AdminActivitesPage', () => {
       mockUseImporterMatchsDistrict(importerMutate, { isPending: true });
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
       const bouton = screen.getByRole('button', { name: 'Import en cours…' });
       expect(bouton).toBeDisabled();
@@ -279,7 +291,7 @@ describe('AdminActivitesPage', () => {
         .mockImplementationOnce(() => {});
       mockUseActivites({ data: [] });
 
-      render(<AdminActivitesPage />);
+      render(<AdminActivitesPage />, { wrapper: MemoryRouter });
       const bouton = screen.getByRole('button', { name: 'Importer les matchs du district' });
       fireEvent.click(bouton);
       expect(screen.getByText(/Import terminé/)).toBeInTheDocument();

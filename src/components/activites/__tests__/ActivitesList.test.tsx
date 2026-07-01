@@ -41,7 +41,8 @@ describe('ActivitesList', () => {
     const ancienne = makeActivite({ id: 'a-ancienne', date: '2026-01-01', label: 'Activité ancienne' });
     render(<ActivitesList activites={[recent, ancienne]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const labels = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[3].textContent);
+    // Colonne « Label » en position 6 (index 5) du tableau depuis l'ajout de la colonne « Lieu ».
+    const labels = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[5].textContent);
     expect(labels).toEqual(['Activité ancienne', 'Activité récente']);
   });
 
@@ -72,5 +73,49 @@ describe('ActivitesList', () => {
 
     expect(screen.getByText('Entraînement')).toBeInTheDocument();
     expect(screen.getByText('Match')).toBeInTheDocument();
+  });
+
+  it('affiche "Sans date" pour une activité dont la date est absente', () => {
+    const activite = makeActivite({ date: undefined });
+    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const row = screen.getByRole('row', { name: /Match amical/ });
+    expect(within(row).getByText('Sans date')).toBeInTheDocument();
+  });
+
+  it("affiche l'équipe quand elle est renseignée sur l'activité", () => {
+    const activite = makeActivite({ equipe: 'B' });
+    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const row = screen.getByRole('row', { name: /Match amical/ });
+    expect(within(row).getByText('B')).toBeInTheDocument();
+  });
+
+  it("n'affiche pas de valeur d'équipe quand elle n'est pas renseignée", () => {
+    const activite = makeActivite({ equipe: undefined });
+    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const row = screen.getByRole('row', { name: /Match amical/ });
+    const cellules = within(row).getAllByRole('cell');
+    // Colonne « Équipe » en position 2 (index 1) du tableau — doit être vide.
+    expect(cellules[1].textContent).toBe('');
+  });
+
+  it('affiche le lieu quand il est renseigné sur l\'activité', () => {
+    const activite = makeActivite({ lieu: 'Stade municipal' });
+    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const row = screen.getByRole('row', { name: /Match amical/ });
+    expect(within(row).getByText('Stade municipal')).toBeInTheDocument();
+  });
+
+  it("n'affiche pas de valeur de lieu quand il n'est pas renseigné (y compris activités créées avant cette feature)", () => {
+    const activite = makeActivite({ lieu: undefined });
+    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const row = screen.getByRole('row', { name: /Match amical/ });
+    const cellules = within(row).getAllByRole('cell');
+    // Colonne « Lieu » en position 3 (index 2) du tableau — doit être vide.
+    expect(cellules[2].textContent).toBe('');
   });
 });

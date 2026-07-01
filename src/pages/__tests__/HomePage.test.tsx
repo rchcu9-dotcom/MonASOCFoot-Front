@@ -1,12 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from '../HomePage';
 import { useAuth } from '../../auth/AuthContext';
-import { useActivites } from '../../hooks/useActivites';
-import type { ActiviteDto } from '../../api/activites';
+import { useResumeAccueil } from '../../hooks/useResumeAccueil';
+import { useMesDisponibilitesJournee } from '../../hooks/useMesDisponibilitesJournee';
+import { useDeclarerDisponibiliteActivite } from '../../hooks/useDeclarerDisponibiliteActivite';
+import { useDeclarerDisponibiliteJournee } from '../../hooks/useDeclarerDisponibiliteJournee';
+import { useSupprimerDisponibiliteActivite } from '../../hooks/useSupprimerDisponibiliteActivite';
+import type { ResumeAccueilDto } from '../../api/disponibilites';
 
 vi.mock('../../auth/AuthContext');
-vi.mock('../../hooks/useActivites');
+vi.mock('../../hooks/useResumeAccueil');
+vi.mock('../../hooks/useMesDisponibilitesJournee');
+vi.mock('../../hooks/useDeclarerDisponibiliteActivite');
+vi.mock('../../hooks/useDeclarerDisponibiliteJournee');
+vi.mock('../../hooks/useSupprimerDisponibiliteActivite');
 
 function mockAuth(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
   vi.mocked(useAuth).mockReturnValue({
@@ -20,59 +29,80 @@ function mockAuth(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
   });
 }
 
-function mockUseActivites(overrides: Partial<ReturnType<typeof useActivites>> = {}) {
-  vi.mocked(useActivites).mockReturnValue({
+function mockUseResumeAccueil(overrides: Partial<ReturnType<typeof useResumeAccueil>> = {}) {
+  vi.mocked(useResumeAccueil).mockReturnValue({
     data: undefined,
     isLoading: false,
     isError: false,
     ...overrides,
-  } as ReturnType<typeof useActivites>);
+  } as ReturnType<typeof useResumeAccueil>);
 }
 
-const activite: ActiviteDto = {
-  id: 'a1',
-  date: '2026-07-01',
-  heureConvocation: '14:00',
-  heureDebut: '15:00',
-  label: 'Match amical',
-  type: 'match',
-  source: 'manuel',
+function mockSupportingHooks() {
+  vi.mocked(useMesDisponibilitesJournee).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useMesDisponibilitesJournee>);
+  vi.mocked(useDeclarerDisponibiliteActivite).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeclarerDisponibiliteActivite>);
+  vi.mocked(useDeclarerDisponibiliteJournee).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useDeclarerDisponibiliteJournee>);
+  vi.mocked(useSupprimerDisponibiliteActivite).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  } as unknown as ReturnType<typeof useSupprimerDisponibiliteActivite>);
+}
+
+function renderHomePage() {
+  return render(<HomePage />, { wrapper: MemoryRouter });
+}
+
+const resumeVide: ResumeAccueilDto = {
+  dernierePassee: null,
+  prochainesDates: [],
+  tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
 };
 
 describe('HomePage', () => {
   beforeEach(() => {
-    vi.mocked(useActivites).mockReset();
+    vi.mocked(useResumeAccueil).mockReset();
+    mockSupportingHooks();
   });
 
   it("affiche le titre 'MonASOCFoot' et l'accroche du club quel que soit l'état de connexion", () => {
     mockAuth({ user: null });
-    mockUseActivites();
+    mockUseResumeAccueil();
 
-    render(<HomePage />);
+    renderHomePage();
 
     expect(screen.getByText('MonASOCFoot')).toBeInTheDocument();
     expect(screen.getByText(/AS Orange Cesson Football/)).toBeInTheDocument();
   });
 
   describe('visiteur non connecté', () => {
-    it("affiche l'invitation à se connecter, sans déclencher la requête des activités", () => {
+    it("affiche l'invitation à se connecter, sans déclencher la requête du résumé", () => {
       mockAuth({ user: null });
-      mockUseActivites();
+      mockUseResumeAccueil();
 
-      render(<HomePage />);
+      renderHomePage();
 
       expect(screen.getByText('Connectez-vous pour déclarer vos disponibilités.')).toBeInTheDocument();
-      expect(useActivites).toHaveBeenCalledWith({ enabled: false });
+      expect(useResumeAccueil).toHaveBeenCalledWith({ enabled: false });
     });
 
-    it("n'affiche ni accroche personnalisée ni état de chargement/erreur/liste", () => {
+    it("n'affiche ni accroche personnalisée ni état de chargement/erreur/résumé", () => {
       mockAuth({ user: null });
-      mockUseActivites({ isLoading: true });
+      mockUseResumeAccueil({ isLoading: true });
 
-      render(<HomePage />);
+      renderHomePage();
 
       expect(screen.queryByText(/Connecté en tant que/)).not.toBeInTheDocument();
-      expect(screen.queryByText('Chargement des activités…')).not.toBeInTheDocument();
+      expect(screen.queryByText('Chargement de votre résumé…')).not.toBeInTheDocument();
     });
   });
 
@@ -85,54 +115,44 @@ describe('HomePage', () => {
       role: 'joueur',
     };
 
-    it('affiche le message de connexion et déclenche la requête des activités', () => {
+    it('affiche le message de connexion et déclenche la requête du résumé', () => {
       mockAuth({ user });
-      mockUseActivites();
+      mockUseResumeAccueil();
 
-      render(<HomePage />);
+      renderHomePage();
 
       expect(screen.getByText('Connecté en tant que Jean Joueur (joueur).')).toBeInTheDocument();
-      expect(useActivites).toHaveBeenCalledWith({ enabled: true });
+      expect(useResumeAccueil).toHaveBeenCalledWith({ enabled: true });
     });
 
-    it('affiche un message de chargement pendant isLoading, sans liste ni erreur', () => {
+    it('affiche un message de chargement pendant isLoading, sans résumé ni erreur', () => {
       mockAuth({ user });
-      mockUseActivites({ isLoading: true });
+      mockUseResumeAccueil({ isLoading: true });
 
-      render(<HomePage />);
+      renderHomePage();
 
-      expect(screen.getByText('Chargement des activités…')).toBeInTheDocument();
-      expect(screen.queryByText('Impossible de charger les activités.')).not.toBeInTheDocument();
+      expect(screen.getByText('Chargement de votre résumé…')).toBeInTheDocument();
+      expect(screen.queryByText('Impossible de charger votre résumé.')).not.toBeInTheDocument();
+      expect(screen.queryByText('Mon tableau de bord')).not.toBeInTheDocument();
     });
 
     it("affiche un message d'erreur quand isError est vrai", () => {
       mockAuth({ user });
-      mockUseActivites({ isError: true });
+      mockUseResumeAccueil({ isError: true });
 
-      render(<HomePage />);
+      renderHomePage();
 
-      expect(screen.getByText('Impossible de charger les activités.')).toBeInTheDocument();
+      expect(screen.getByText('Impossible de charger votre résumé.')).toBeInTheDocument();
     });
 
-    it('délègue le rendu des activités à ProchainesActivites en cas de succès', () => {
-      // Date volontairement très éloignée dans le futur : HomePage ne passe pas de prop
-      // `aujourdhui` à ProchainesActivites, qui retombe alors sur la date système réelle.
-      const activiteLointaine: ActiviteDto = { ...activite, date: '2099-01-01' };
+    it('délègue le rendu du résumé à ResumeAccueil en cas de succès', () => {
       mockAuth({ user });
-      mockUseActivites({ data: [activiteLointaine] });
+      mockUseResumeAccueil({ data: resumeVide });
 
-      render(<HomePage />);
+      renderHomePage();
 
-      expect(screen.getByText('Match amical')).toBeInTheDocument();
-    });
-
-    it("affiche le message d'absence d'activité quand la liste est vide", () => {
-      mockAuth({ user });
-      mockUseActivites({ data: [] });
-
-      render(<HomePage />);
-
-      expect(screen.getByText('Aucune activité à venir.')).toBeInTheDocument();
+      expect(screen.getByText('Ma dernière activité')).toBeInTheDocument();
+      expect(screen.getByText('Mon tableau de bord')).toBeInTheDocument();
     });
   });
 });

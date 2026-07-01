@@ -5,6 +5,7 @@ import {
   supprimerDisponibiliteActivite,
   declarerDisponibiliteJournee,
   fetchMesDisponibilitesJournee,
+  fetchResumeAccueil,
 } from '../disponibilites';
 import { authFetch } from '../authFetch';
 
@@ -266,5 +267,56 @@ describe('fetchMesDisponibilitesJournee', () => {
     vi.mocked(authFetch).mockResolvedValue(mockResponse(null, false, 500));
 
     await expect(fetchMesDisponibilitesJournee()).rejects.toThrow(/500/);
+  });
+});
+
+describe('fetchResumeAccueil', () => {
+  beforeEach(() => {
+    vi.mocked(authFetch).mockReset();
+  });
+
+  it('appelle authFetch en GET implicite sur /disponibilites/resume-accueil', async () => {
+    vi.mocked(authFetch).mockResolvedValue(
+      mockResponse({
+        dernierePassee: null,
+        prochainesDates: [],
+        tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
+      }),
+    );
+
+    await fetchResumeAccueil();
+
+    expect(authFetch).toHaveBeenCalledWith('http://localhost:3020/disponibilites/resume-accueil');
+  });
+
+  it('renvoie le JSON parsé quand la réponse est ok', async () => {
+    const body = {
+      dernierePassee: {
+        activite: {
+          id: 'a1',
+          date: '2026-06-20',
+          heureConvocation: '14:00',
+          heureDebut: '15:00',
+          label: 'Match',
+          type: 'match' as const,
+        },
+        disponibilite: { statut: 'present' as const, source: 'activite' as const },
+      },
+      prochainesDates: [],
+      tableauDeBord: { totalAVenir: 3, renseigneesAVenir: 1, pourcentageRenseignement: 33 },
+    };
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(body));
+
+    const result = await fetchResumeAccueil();
+
+    expect(result).toEqual(body);
+  });
+
+  it("lève une erreur avec le message du corps de réponse quand la réponse n'est pas ok", async () => {
+    vi.mocked(authFetch).mockResolvedValue(
+      mockResponse({ message: 'Erreur inattendue' }, false, 500),
+    );
+
+    await expect(fetchResumeAccueil()).rejects.toThrow('Erreur inattendue');
   });
 });

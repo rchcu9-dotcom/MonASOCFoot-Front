@@ -59,6 +59,26 @@ describe('useDeclarerDisponibiliteActivite', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['disponibilites-effectif'] });
   });
 
+  it('invalide aussi la queryKey ["resume-accueil"] après une déclaration réussie (popup réutilisée sur la page Accueil)', async () => {
+    vi.mocked(declarerDisponibiliteActivite).mockResolvedValue({
+      id: 'dispo-1',
+      utilisateurId: 'u1',
+      activiteId: 'activite-1',
+      statut: 'present',
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderHook(() => useDeclarerDisponibiliteActivite(), {
+      wrapper: makeWrapper(queryClient),
+    });
+
+    result.current.mutate({ activiteId: 'activite-1', dto: { statut: 'present' } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['resume-accueil'] });
+  });
+
   it('expose isError quand declarerDisponibiliteActivite rejette (ex: 403)', async () => {
     vi.mocked(declarerDisponibiliteActivite).mockRejectedValue(
       new Error("Seul un admin peut modifier la disponibilité d'un autre utilisateur"),

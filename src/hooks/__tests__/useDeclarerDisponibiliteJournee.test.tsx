@@ -60,6 +60,26 @@ describe('useDeclarerDisponibiliteJournee', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['mes-disponibilites-journee'] });
   });
 
+  it('invalide aussi la queryKey ["resume-accueil"] après une déclaration réussie (popup réutilisée sur la page Accueil)', async () => {
+    vi.mocked(declarerDisponibiliteJournee).mockResolvedValue({
+      id: 'dispo-journee-1',
+      utilisateurId: 'u1',
+      date: '2026-07-01',
+      statut: 'present',
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderHook(() => useDeclarerDisponibiliteJournee(), {
+      wrapper: makeWrapper(queryClient),
+    });
+
+    result.current.mutate({ date: '2026-07-01', dto: { statut: 'present' } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['resume-accueil'] });
+  });
+
   it('expose isError quand declarerDisponibiliteJournee rejette (ex: 403)', async () => {
     vi.mocked(declarerDisponibiliteJournee).mockRejectedValue(
       new Error("Seul un admin peut modifier la disponibilité d'un autre utilisateur"),

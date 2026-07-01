@@ -5,10 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TopBar } from '../TopBar';
 import { AuthProvider } from '../../../auth/AuthContext';
 
-// Utilise tabsConfig réel (Accueil + Disponibilités de l'effectif) : reflète l'état actuel de
-// production, où le bouton "Plus" affiche le tab secondaire "Disponibilités de l'effectif".
+// Utilise tabsConfig réel (3 tabs primaires : Accueil, Mes disponibilités, Disponibilités de
+// l'effectif ; 3 tabs admin-only en secondaire) : reflète l'état actuel de production, où un
+// utilisateur anonyme n'a aucun tab secondaire visible (les tabs admin sont filtrés en amont par
+// useVisibleTabs) et ne voit donc pas de bouton "Plus".
 // Le cas avec un mock à surplus arbitraire est couvert par TopBar.overflow.test.tsx, dans un
-// fichier séparé pour isoler son propre mock de tabsConfig.
+// fichier séparé pour isoler son propre mock de tabsConfig. Le cas admin (bouton "Plus" avec les
+// 3 tabs admin réels) est couvert par TopBar.admin.test.tsx.
 function renderTopBar() {
   const queryClient = new QueryClient();
 
@@ -28,6 +31,15 @@ describe('TopBar', () => {
     renderTopBar();
 
     expect(screen.getByText('MonASOCFoot')).toBeInTheDocument();
+  });
+
+  it('renders the club logo next to the brand name (charte graphique)', () => {
+    const { container } = renderTopBar();
+
+    const logo = container.querySelector('img.app-topbar__logo');
+    expect(logo).not.toBeNull();
+    expect(logo).toHaveAttribute('src', '/logo-asocf.svg');
+    expect(logo).toHaveAttribute('alt', '');
   });
 
   it('toggles the hamburger menu on click', () => {
@@ -52,13 +64,18 @@ describe('TopBar', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('shows the "Plus" button with the secondary tab (current tabsConfig)', () => {
+  it('hides the "Plus" button for an anonymous user (the 3 primary tabs are the only visible ones)', () => {
     renderTopBar();
 
-    const more = screen.getByRole('button', { name: "Plus d'options de navigation" });
-    fireEvent.click(more);
+    expect(screen.queryByRole('button', { name: "Plus d'options de navigation" })).not.toBeInTheDocument();
+  });
 
-    expect(screen.getByRole('menuitem', { name: /Disponibilités de l'effectif/ })).toBeInTheDocument();
+  it('shows exactly the 3 primary tabs in the top navigation (current tabsConfig)', () => {
+    renderTopBar();
+
+    expect(screen.getByRole('link', { name: 'Accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mes disponibilités' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: "Disponibilités de l'effectif" })).toBeInTheDocument();
   });
 
   it('shows a link to login when no user is connected', () => {

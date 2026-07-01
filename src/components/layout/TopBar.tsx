@@ -23,60 +23,65 @@ export function TopBar() {
 
   return (
     <header className="app-topbar">
-      <div className="app-topbar__hamburger-wrapper">
-        <button
-          type="button"
-          className="app-topbar__hamburger"
-          aria-label="Ouvrir le menu"
-          aria-expanded={menuMode === 'full'}
-          onClick={toggleFullMenu}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-        {menuMode === 'full' ? (
-          <HamburgerMenu tabs={allTabs} onNavigate={() => setMenuMode(null)} />
-        ) : null}
-      </div>
-      <div className="app-topbar__brand">MonASOCFoot</div>
-      <Tabs variant="top" />
-      {hasOverflow ? (
-        <div className="app-topbar__more-wrapper">
+      <div className="app-topbar__inner">
+        <div className="app-topbar__hamburger-wrapper">
           <button
             type="button"
-            className="app-topbar__more"
-            aria-label="Plus d'options de navigation"
-            aria-expanded={menuMode === 'overflow'}
-            onClick={toggleOverflowMenu}
+            className="app-topbar__hamburger"
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuMode === 'full'}
+            onClick={toggleFullMenu}
           >
-            <span className="app-topbar__more-icon">
-              <span />
-              <span />
-              <span />
-            </span>
-            <span className="app-topbar__more-label">Plus</span>
+            <span />
+            <span />
+            <span />
           </button>
-          {menuMode === 'overflow' ? (
-            <HamburgerMenu
-              tabs={secondaryTabs}
-              onNavigate={() => setMenuMode(null)}
-              className="app-hamburger-menu--anchored"
-            />
+          {menuMode === 'full' ? (
+            <HamburgerMenu tabs={allTabs} onNavigate={() => setMenuMode(null)} />
           ) : null}
         </div>
-      ) : null}
-      <div className="app-topbar__auth">
-        {loading ? null : user ? (
-          <>
-            <span className="app-topbar__user">{user.displayName}</span>
-            <button type="button" onClick={logout}>
-              Déconnexion
+        <div className="app-topbar__brand">
+          <img src="/logo-asocf.svg" alt="" className="app-topbar__logo" />
+          MonASOCFoot
+        </div>
+        <Tabs variant="top" />
+        {hasOverflow ? (
+          <div className="app-topbar__more-wrapper">
+            <button
+              type="button"
+              className="app-topbar__more"
+              aria-label="Plus d'options de navigation"
+              aria-expanded={menuMode === 'overflow'}
+              onClick={toggleOverflowMenu}
+            >
+              <span className="app-topbar__more-icon">
+                <span />
+                <span />
+                <span />
+              </span>
+              <span className="app-topbar__more-label">Plus</span>
             </button>
-          </>
-        ) : (
-          <Link to="/login">Connexion</Link>
-        )}
+            {menuMode === 'overflow' ? (
+              <HamburgerMenu
+                tabs={secondaryTabs}
+                onNavigate={() => setMenuMode(null)}
+                className="app-hamburger-menu--anchored"
+              />
+            ) : null}
+          </div>
+        ) : null}
+        <div className="app-topbar__auth">
+          {loading ? null : user ? (
+            <>
+              <span className="app-topbar__user">{user.displayName}</span>
+              <button type="button" onClick={logout}>
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <Link to="/login">Connexion</Link>
+          )}
+        </div>
       </div>
     </header>
   );

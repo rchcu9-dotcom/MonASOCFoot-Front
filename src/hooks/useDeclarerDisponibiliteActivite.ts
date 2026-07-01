@@ -17,6 +17,7 @@ export function useDeclarerDisponibiliteActivite() {
     mutationFn: ({ activiteId, dto }) => declarerDisponibiliteActivite(activiteId, dto),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['disponibilites-effectif'] });
+      void queryClient.invalidateQueries({ queryKey: ['resume-accueil'] });
     },
   });
 }

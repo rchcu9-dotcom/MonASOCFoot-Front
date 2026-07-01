@@ -33,7 +33,9 @@ describe('DisponibiliteBadge', () => {
 
     render(<DisponibiliteBadge disponibilite={disponibilite} />);
 
-    expect(screen.getByText(/Présent\s*\*/)).toBeInTheDocument();
+    // Le suffixe "*" est maintenant un nœud texte distinct du `<span>` enfant portant le libellé
+    // du statut (rendu délégué à `StatutBadge`) : on vérifie le contenu textuel global du badge.
+    expect(screen.getByText('Présent').closest('.disponibilite-badge')).toHaveTextContent('Présent *');
   });
 
   it('affiche une cellule neutre "—" quand source === "aucune", sans afficher le libellé du statut factice', () => {
@@ -66,6 +68,11 @@ describe('DisponibiliteBadge', () => {
 
     render(<DisponibiliteBadge disponibilite={disponibilite} />);
 
-    expect(screen.getByText('Présent')).toHaveAttribute('title', 'Arrivée tardive');
+    // Le `title` est porté par le conteneur (`<span class="disponibilite-badge" title=...>`),
+    // pas par le `<span>` enfant qui affiche le libellé du statut (rendu délégué à `StatutBadge`).
+    expect(screen.getByText('Présent').closest('.disponibilite-badge')).toHaveAttribute(
+      'title',
+      'Arrivée tardive',
+    );
   });
 });

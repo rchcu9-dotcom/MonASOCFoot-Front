@@ -7,6 +7,7 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { DisponibilitesEffectifPage } from './pages/DisponibilitesEffectifPage';
 import { MesDisponibilitesPage } from './pages/MesDisponibilitesPage';
 import { AdminActivitesPage } from './pages/AdminActivitesPage';
+import { AdminPlanificationActivitesPage } from './pages/AdminPlanificationActivitesPage';
 import { AdminUtilisateursPage } from './pages/AdminUtilisateursPage';
 
 export default function App() {
@@ -23,6 +24,14 @@ export default function App() {
           element={
             <RequireAdminRoute>
               <AdminActivitesPage />
+            </RequireAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/activites/planification"
+          element={
+            <RequireAdminRoute>
+              <AdminPlanificationActivitesPage />
             </RequireAdminRoute>
           }
         />

@@ -1,41 +1,56 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { ActiviteDto, CreerActiviteInput, TypeActivite } from '../../api/activites';
+import type {
+  ActiviteDto,
+  CreerActiviteInput,
+  EquipeClub,
+  TypeActivite,
+} from '../../api/activites';
 
 export interface ActiviteFormValues {
+  /** Vide = pas de date assignée (activité « sans date », cf. interface de planification). */
   date: string;
   heureConvocation: string;
   heureDebut: string;
   label: string;
   type: TypeActivite;
   commentaire?: string;
+  lieu?: string;
+  equipe?: EquipeClub | '';
 }
 
 interface Props {
   /** `undefined` = mode création. */
   activite?: ActiviteDto;
-  onSubmit: (values: ActiviteFormValues) => void;
+  onSubmit: (values: CreerActiviteInput) => void;
   onCancel: () => void;
 }
 
 function valeursInitiales(activite?: ActiviteDto): ActiviteFormValues {
   if (activite) {
     return {
-      date: activite.date,
+      date: activite.date ?? '',
       heureConvocation: activite.heureConvocation,
       heureDebut: activite.heureDebut,
       label: activite.label,
       type: activite.type,
       commentaire: activite.commentaire ?? '',
+      lieu: activite.lieu ?? '',
+      equipe: activite.equipe ?? '',
     };
   }
   return {
     date: '',
-    heureConvocation: '',
-    heureDebut: '',
+    // Valeurs par défaut en création uniquement : la grande majorité des matchs/entraînements
+    // du club ont lieu en soirée à ces horaires (cf. spec
+    // sur-la-page-dtail-dune-cration-dactivit-mettre-par-dfaut-heu).
+    heureConvocation: '20:00',
+    heureDebut: '21:00',
     label: '',
     type: 'match' as TypeActivite,
     commentaire: '',
+    lieu: '',
+    equipe: '',
   };
 }
 
@@ -49,7 +64,6 @@ export function ActiviteForm({ activite, onSubmit, onCancel }: Props) {
   }
 
   function valider(): string | null {
-    if (!values.date) return 'La date est obligatoire.';
     if (!values.heureConvocation) return "L'heure de convocation est obligatoire.";
     if (!values.heureDebut) return "L'heure de début est obligatoire.";
     if (!values.label) return 'Le label est obligatoire.';
@@ -69,7 +83,10 @@ export function ActiviteForm({ activite, onSubmit, onCancel }: Props) {
     setErreur(null);
     const payload: CreerActiviteInput = {
       ...values,
+      date: values.date || undefined,
       commentaire: values.commentaire || undefined,
+      lieu: values.lieu || undefined,
+      equipe: values.equipe || undefined,
     };
     onSubmit(payload);
   }
@@ -77,13 +94,17 @@ export function ActiviteForm({ activite, onSubmit, onCancel }: Props) {
   return (
     <form className="activite-form" onSubmit={handleSubmit}>
       <div className="activite-form__field">
-        <label htmlFor="activite-date">Date</label>
+        <label htmlFor="activite-date">Date (optionnelle)</label>
         <input
           id="activite-date"
           type="date"
           value={values.date}
           onChange={(event) => handleChange('date', event.target.value)}
         />
+        <p className="activite-form__hint">
+          Laisser vide pour une activité sans date encore connue (assignable plus tard via la
+          planification).
+        </p>
       </div>
 
       <div className="activite-form__field">
@@ -126,6 +147,32 @@ export function ActiviteForm({ activite, onSubmit, onCancel }: Props) {
           <option value="match">Match</option>
           <option value="autre">Autre</option>
         </select>
+      </div>
+
+      <div className="activite-form__field">
+        <label htmlFor="activite-equipe">Équipe</label>
+        <select
+          id="activite-equipe"
+          value={values.equipe ?? ''}
+          onChange={(event) =>
+            handleChange('equipe', event.target.value as EquipeClub | '')
+          }
+        >
+          <option value="">Non renseignée</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="Vet">Vét</option>
+        </select>
+      </div>
+
+      <div className="activite-form__field">
+        <label htmlFor="activite-lieu">Lieu</label>
+        <input
+          id="activite-lieu"
+          type="text"
+          value={values.lieu ?? ''}
+          onChange={(event) => handleChange('lieu', event.target.value)}
+        />
       </div>
 
       <div className="activite-form__field">

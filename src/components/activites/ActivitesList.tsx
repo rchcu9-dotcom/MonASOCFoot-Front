@@ -12,13 +12,18 @@ export function ActivitesList({ activites, onEdit, onDelete }: Props) {
     return <p>Aucune activité pour le moment.</p>;
   }
 
-  const activitesTriees = [...activites].sort((a, b) => a.date.localeCompare(b.date));
+  // Les activités sans date (chaîne vide en tri) remontent en tête de liste.
+  const activitesTriees = [...activites].sort((a, b) =>
+    (a.date ?? '').localeCompare(b.date ?? ''),
+  );
 
   return (
     <table className="activites-list">
       <thead>
         <tr>
           <th scope="col">Date</th>
+          <th scope="col">Équipe</th>
+          <th scope="col">Lieu</th>
           <th scope="col">Convocation</th>
           <th scope="col">Début</th>
           <th scope="col">Label</th>
@@ -30,7 +35,9 @@ export function ActivitesList({ activites, onEdit, onDelete }: Props) {
       <tbody>
         {activitesTriees.map((activite) => (
           <tr key={activite.id}>
-            <td>{activite.date}</td>
+            <td>{activite.date ?? 'Sans date'}</td>
+            <td>{activite.equipe ?? ''}</td>
+            <td>{activite.lieu ?? ''}</td>
             <td>{activite.heureConvocation}</td>
             <td>{activite.heureDebut}</td>
             <td>{activite.label}</td>
