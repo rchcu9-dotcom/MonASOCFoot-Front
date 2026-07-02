@@ -17,7 +17,10 @@ function git(args: string[]): string {
   return execFileSync('git', args, { cwd: frontRoot, encoding: 'utf-8' }).trim();
 }
 
-describe('front/ — organisation Git locale', () => {
+// Ces tests inspectent l'état du dépôt Git local (branches, remote, arbre de travail) — sans
+// objet dans un runner CI, dont le checkout est superficiel et limité à la branche déclenchante
+// (`main` n'y est ni fetché ni résolvable).
+describe.skipIf(!!process.env.CI)('front/ — organisation Git locale', () => {
   it('est un dépôt Git valide', () => {
     expect(git(['rev-parse', '--is-inside-work-tree'])).toBe('true');
   });
