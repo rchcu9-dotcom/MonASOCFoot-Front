@@ -12,8 +12,8 @@ interface Props {
 }
 
 /**
- * Tableau de bord personnel de la page Accueil : dernière activité passée, 3 prochaines dates,
- * indicateurs. Orchestre l'ouverture de `DisponibiliteDetailModal` (réutilisée telle quelle,
+ * Tableau de bord personnel de la page Accueil : indicateurs, dernière activité passée, puis
+ * 3 prochaines dates. Orchestre l'ouverture de `DisponibiliteDetailModal` (réutilisée telle quelle,
  * cf. `MesDisponibilitesPage`) au clic sur une activité.
  */
 export function ResumeAccueil({ resume }: Props) {
@@ -35,6 +35,7 @@ export function ResumeAccueil({ resume }: Props) {
 
   return (
     <div className="resume-accueil">
+      <TableauDeBordAccueil tableauDeBord={resume.tableauDeBord} />
       <DerniereActivitePassee
         dernierePassee={resume.dernierePassee}
         onSelect={setActiviteSelectionneeId}
@@ -43,7 +44,6 @@ export function ResumeAccueil({ resume }: Props) {
         prochainesDates={resume.prochainesDates}
         onSelect={setActiviteSelectionneeId}
       />
-      <TableauDeBordAccueil tableauDeBord={resume.tableauDeBord} />
 
       <p>
         <Link to="/mes-disponibilites">Voir toutes mes disponibilités</Link>

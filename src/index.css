@@ -164,17 +164,27 @@ a {
 
 .planification__colonnes {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  align-items: flex-start;
 }
 
 .planification__colonne {
-  flex: 1;
   min-width: 0;
 }
 
-.planification__colonne--sans-date {
-  flex: 0 0 220px;
+@media (min-width: 768px) {
+  .planification__colonnes {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .planification__colonne {
+    flex: 1;
+  }
+
+  .planification__colonne--sans-date {
+    flex: 0 0 220px;
+  }
 }
 
 .planification__dates {
