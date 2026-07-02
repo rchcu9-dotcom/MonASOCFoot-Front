@@ -20,35 +20,37 @@ export function UtilisateursTable({ utilisateurs, idUtilisateurConnecte, idEnCou
   );
 
   return (
-    <table className="utilisateurs-table">
-      <thead>
-        <tr>
-          <th scope="col">Email</th>
-          <th scope="col">Nom affiché</th>
-          <th scope="col">Rôle</th>
-          <th scope="col">Dernière connexion</th>
-        </tr>
-      </thead>
-      <tbody>
-        {utilisateursTries.map((utilisateur) => (
-          <tr key={utilisateur.id}>
-            <td>{utilisateur.email ?? '—'}</td>
-            <td>{utilisateur.displayName}</td>
-            <td>
-              <select
-                aria-label={`Rôle de ${utilisateur.displayName}`}
-                value={utilisateur.role}
-                disabled={utilisateur.id === idUtilisateurConnecte || utilisateur.id === idEnCours}
-                onChange={(event) => onChangeRole(utilisateur.id, event.target.value as RoleUtilisateur)}
-              >
-                <option value="joueur">Joueur</option>
-                <option value="admin">Admin</option>
-              </select>
-            </td>
-            <td>{utilisateur.derniereConnexion ?? 'jamais'}</td>
+    <div className="table-scroll">
+      <table className="utilisateurs-table">
+        <thead>
+          <tr>
+            <th scope="col">Email</th>
+            <th scope="col">Nom affiché</th>
+            <th scope="col">Rôle</th>
+            <th scope="col">Dernière connexion</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {utilisateursTries.map((utilisateur) => (
+            <tr key={utilisateur.id}>
+              <td>{utilisateur.email ?? '—'}</td>
+              <td>{utilisateur.displayName}</td>
+              <td>
+                <select
+                  aria-label={`Rôle de ${utilisateur.displayName}`}
+                  value={utilisateur.role}
+                  disabled={utilisateur.id === idUtilisateurConnecte || utilisateur.id === idEnCours}
+                  onChange={(event) => onChangeRole(utilisateur.id, event.target.value as RoleUtilisateur)}
+                >
+                  <option value="joueur">Joueur</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </td>
+              <td>{utilisateur.derniereConnexion ?? 'jamais'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

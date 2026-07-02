@@ -1,45 +1,71 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DisponibilitesEffectifPage } from '../DisponibilitesEffectifPage';
-import { useDisponibilitesEffectif } from '../../hooks/useDisponibilitesEffectif';
-import type { ActiviteColonneDto, LigneJoueurDto } from '../../api/disponibilites';
+import { useEffectifMatch } from '../../hooks/useEffectifMatch';
+import type { EffectifMatchResponseDto, JoueurEffectifMatchDto } from '../../api/disponibilites';
 
-vi.mock('../../hooks/useDisponibilitesEffectif');
+vi.mock('../../hooks/useEffectifMatch');
 
-const activites: ActiviteColonneDto[] = [
-  { id: 'a1', date: '2026-07-01', heureConvocation: '14:00', heureDebut: '15:00', label: 'Match', type: 'match' },
+const matchCourant: EffectifMatchResponseDto['matchCourant'] = {
+  id: 'm1',
+  date: '2026-07-01',
+  heureConvocation: '14:00',
+  heureDebut: '15:00',
+  label: 'Match retour',
+  type: 'match',
+};
+
+const joueurs: JoueurEffectifMatchDto[] = [
+  {
+    utilisateurId: 'u1',
+    displayName: 'Alice Dupont',
+    pourcentageMatchsAVenirRenseignes: 50,
+    disponibiliteMatchCourant: { statut: 'present', source: 'activite' },
+  },
 ];
 
-const joueurs: LigneJoueurDto[] = [
-  { utilisateurId: 'u1', displayName: 'Alice Dupont', disponibilites: { a1: { statut: 'present', source: 'activite' } } },
-];
+const reponseAvecMatch: EffectifMatchResponseDto = {
+  matchCourant,
+  matchPrecedentId: 'm0',
+  matchSuivantId: 'm2',
+  badge: { nbPresents: 1, nbDisponibles: 0, pourcentageSaisie: 100 },
+  joueurs,
+};
 
-function mockUseDisponibilitesEffectif(overrides: Partial<ReturnType<typeof useDisponibilitesEffectif>>) {
-  vi.mocked(useDisponibilitesEffectif).mockReturnValue({
+const reponseAucunMatch: EffectifMatchResponseDto = {
+  matchCourant: null,
+  matchPrecedentId: null,
+  matchSuivantId: null,
+  badge: null,
+  joueurs: [],
+};
+
+function mockUseEffectifMatch(overrides: Partial<ReturnType<typeof useEffectifMatch>>) {
+  vi.mocked(useEffectifMatch).mockReturnValue({
     data: undefined,
     isLoading: false,
     isError: false,
     ...overrides,
-  } as ReturnType<typeof useDisponibilitesEffectif>);
+  } as ReturnType<typeof useEffectifMatch>);
 }
 
 describe('DisponibilitesEffectifPage', () => {
   beforeEach(() => {
-    vi.mocked(useDisponibilitesEffectif).mockReset();
+    vi.mocked(useEffectifMatch).mockReset();
   });
 
-  it('affiche le message de chargement pendant isLoading, sans tableau ni filtre', () => {
-    mockUseDisponibilitesEffectif({ isLoading: true });
+  it('affiche le message de chargement pendant isLoading, sans navigation ni tableau', () => {
+    mockUseEffectifMatch({ isLoading: true });
 
     render(<DisponibilitesEffectifPage />);
 
     expect(screen.getByText(/Chargement des disponibilités/)).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it("affiche un message d'erreur quand isError est vrai", () => {
-    mockUseDisponibilitesEffectif({ isError: true });
+    mockUseEffectifMatch({ isError: true });
 
     render(<DisponibilitesEffectifPage />);
 
@@ -47,44 +73,63 @@ describe('DisponibilitesEffectifPage', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
-  it('affiche le filtre et le tableau quand les données sont chargées avec succès', () => {
-    mockUseDisponibilitesEffectif({ data: { activites, joueurs } });
+  it('affiche la navigation et le tableau des joueurs quand un match est à afficher', () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
 
     render(<DisponibilitesEffectifPage />);
 
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getByText('Match retour')).toBeInTheDocument();
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument();
   });
 
-  it('affiche le message "vide" du tableau quand les données sont chargées mais sans activité', () => {
-    mockUseDisponibilitesEffectif({ data: { activites: [], joueurs: [] } });
+  it('affiche "Aucun match à venir." quand matchCourant est null, sans navigation ni tableau', () => {
+    mockUseEffectifMatch({ data: reponseAucunMatch });
 
     render(<DisponibilitesEffectifPage />);
 
-    expect(screen.getByText(/Aucune activité à venir/)).toBeInTheDocument();
-  });
-
-  it('met à jour le filtre transmis au hook quand on change la sélection (re-render avec le nouveau filtre)', () => {
-    mockUseDisponibilitesEffectif({ data: { activites, joueurs } });
-
-    render(<DisponibilitesEffectifPage />);
-
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'a1' } });
-
-    // Le changement de filtre déclenche un nouveau rendu : on vérifie que le hook est rappelé
-    // avec le nouveau filtre (deuxième render après le mount).
-    const lastCallArgs = vi.mocked(useDisponibilitesEffectif).mock.calls.at(-1);
-    expect(lastCallArgs?.[0]).toEqual({ activiteId: 'a1' });
-  });
-
-  it("n'expose aucun élément interactif de modification (aucun bouton, lien ou champ de saisie)", () => {
-    mockUseDisponibilitesEffectif({ data: { activites, joueurs } });
-
-    render(<DisponibilitesEffectifPage />);
-
+    expect(screen.getByText('Aucun match à venir.')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it("n'affiche plus de menu déroulant (liste des activités) : navigation uniquement par flèches", () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
+
+    render(<DisponibilitesEffectifPage />);
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match précédent' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match suivant' })).toBeInTheDocument();
+  });
+
+  it('sélectionne le match suivant au clic sur la flèche droite (re-render avec le nouveau matchId)', () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
+
+    render(<DisponibilitesEffectifPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Match suivant' }));
+
+    const lastCallArgs = vi.mocked(useEffectifMatch).mock.calls.at(-1);
+    expect(lastCallArgs?.[0]).toBe('m2');
+  });
+
+  it('sélectionne le match précédent au clic sur la flèche gauche (re-render avec le nouveau matchId)', () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
+
+    render(<DisponibilitesEffectifPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Match précédent' }));
+
+    const lastCallArgs = vi.mocked(useEffectifMatch).mock.calls.at(-1);
+    expect(lastCallArgs?.[0]).toBe('m0');
+  });
+
+  it("n'expose aucun élément de modification de donnée (aucun lien ni champ de saisie ; les flèches ne font que naviguer)", () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
+
+    render(<DisponibilitesEffectifPage />);
+
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(screen.queryAllByRole('button')).toHaveLength(2);
   });
 });

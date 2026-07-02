@@ -1,10 +1,27 @@
 @import './styles/tokens.css';
 
+/* Empêche tout contenu (ex. tableaux larges) de pousser la page au-delà de la largeur de
+   l'écran sur mobile : un débordement horizontal du document casse le positionnement des
+   bandeaux `position: sticky`/`position: fixed` de `layout.css`, qui ne restent alors
+   visibles en permanence que sur les pages sans contenu plus large que l'écran (ex. Accueil). */
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: var(--font-family-base);
   color: var(--color-text);
   background: var(--color-background);
+}
+
+/* Conteneur de défilement horizontal pour les tableaux plus larges que l'écran, afin que leur
+   contenu reste accessible (scroll interne) plutôt que d'être coupé par `overflow-x: hidden`
+   ci-dessus. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
 }
 
 button {
@@ -409,6 +426,62 @@ a {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.effectif-match-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.effectif-match-navigation__fleche {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-background-alt);
+  color: var(--color-text);
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.effectif-match-navigation__fleche:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.effectif-match-navigation__label {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.effectif-match-navigation__titre {
+  font-weight: 600;
+}
+
+.effectif-match-navigation__date {
+  color: var(--color-text-muted);
+}
+
+.effectif-match-badge {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.effectif-joueurs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.effectif-joueurs-table th,
+.effectif-joueurs-table td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem;
+  text-align: left;
 }
 
 .statut-badge {

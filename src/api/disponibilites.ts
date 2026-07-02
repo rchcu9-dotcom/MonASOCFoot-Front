@@ -63,6 +63,36 @@ export async function fetchDisponibilitesEffectif(
   return (await res.json()) as DisponibilitesEffectifResponseDto;
 }
 
+export interface EffectifMatchBadgeDto {
+  nbPresents: number;
+  nbDisponibles: number;
+  pourcentageSaisie: number;
+}
+
+export interface JoueurEffectifMatchDto {
+  utilisateurId: string;
+  displayName: string;
+  pourcentageMatchsAVenirRenseignes: number;
+  disponibiliteMatchCourant: DisponibiliteEffectiveDto;
+}
+
+export interface EffectifMatchResponseDto {
+  matchCourant: ActiviteColonneDto | null;
+  matchPrecedentId: string | null;
+  matchSuivantId: string | null;
+  badge: EffectifMatchBadgeDto | null;
+  joueurs: JoueurEffectifMatchDto[];
+}
+
+export async function fetchEffectifMatch(matchId?: string): Promise<EffectifMatchResponseDto> {
+  const search = matchId ? `?matchId=${encodeURIComponent(matchId)}` : '';
+  const res = await authFetch(`${API_BASE_URL}/disponibilites/effectif-match${search}`);
+  return parseJsonOrThrow<EffectifMatchResponseDto>(
+    res,
+    "Erreur lors de la récupération de l'effectif du match",
+  );
+}
+
 export interface DisponibiliteActiviteDto {
   id: string;
   utilisateurId: string;
