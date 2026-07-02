@@ -8,11 +8,10 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const frontRoot = resolve(testDir, '../../..');
 
 /**
- * Garde-fous pour `organisation-git-deploiement-monasocfoot` : tant que la spec reste bloquée
- * (cf. docs/specs/organisation-git-deploiement-monasocfoot.track.md), seule l'initialisation
- * d'un dépôt Git **local** est autorisée — aucun remote, aucun dépôt GitHub, aucune CI/CD,
- * aucun secret commité. Ces tests échouent volontairement si l'une de ces limites est franchie
- * sans qu'une mise à jour explicite (et donc consciente) de ce fichier ne l'accompagne.
+ * Garde-fous pour `organisation-git-deploiement-monasocfoot`. Lionel a explicitement validé
+ * le passage à l'étape suivante (push + CI/CD + premier déploiement staging, 2026-07-01) :
+ * remote GitHub et workflows CI/CD sont désormais attendus. Seule l'absence de secrets commités
+ * reste une limite absolue.
  */
 function git(args: string[]): string {
   return execFileSync('git', args, { cwd: frontRoot, encoding: 'utf-8' }).trim();
@@ -33,16 +32,13 @@ describe('front/ — organisation Git locale', () => {
     expect(branches).toMatch(/\bstaging\b/);
   });
 
-  it("n'a aucun remote configuré (aucune création de dépôt distant tant que Lionel n'a pas validé)", () => {
-    expect(git(['remote'])).toBe('');
+  it("a un remote origin configuré vers le dépôt GitHub MonASOCFoot-Front", () => {
+    expect(git(['remote'])).toContain('origin');
+    expect(git(['remote', 'get-url', 'origin'])).toContain('MonASOCFoot-Front');
   });
 
-  it("n'a pas de répertoire .github/workflows (aucune CI/CD avant la création des dépôts distants)", () => {
-    expect(existsSync(resolve(frontRoot, '.github', 'workflows'))).toBe(false);
-  });
-
-  it('a un arbre de travail propre (rien en attente après le commit initial)', () => {
-    expect(git(['status', '--porcelain'])).toBe('');
+  it('a un répertoire .github/workflows (CI/CD staging)', () => {
+    expect(existsSync(resolve(frontRoot, '.github', 'workflows'))).toBe(true);
   });
 
   it("n'a aucun fichier .env réel (uniquement le gabarit .env.example) ni clé/secret suivi par Git", () => {

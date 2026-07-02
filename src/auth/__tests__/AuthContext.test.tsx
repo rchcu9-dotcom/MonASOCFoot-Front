@@ -1,7 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useEffect } from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../AuthContext';
 import { getToken } from '../authToken';
+
+// Capture la valeur du hook après le rendu (dans un effet) pour l'exposer aux assertions du
+// test, sans muter de variable pendant le rendu (react-hooks/immutability).
+function Capture({ onCapture }: { onCapture: (value: ReturnType<typeof useAuth>) => void }) {
+  const value = useAuth();
+  useEffect(() => {
+    onCapture(value);
+  });
+  return null;
+}
 
 // AuthContext fait des `fetch` directs vers l'API (pas de mock de module `authFetch` : c'est lui
 // qui gère le token avant que les autres hooks/fonctions API n'existent). On mocke donc
@@ -129,19 +140,15 @@ describe('AuthContext / useAuth', () => {
     it("lève une erreur avec le message du body quand dev-login échoue (ex: 403 désactivé en production)", async () => {
       global.fetch = vi.fn().mockResolvedValue(mockJsonResponse({ message: 'dev-login désactivé en production' }, false, 403));
 
-      let captured: ReturnType<typeof useAuth> | null = null;
-      function Capture() {
-        captured = useAuth();
-        return null;
-      }
+      const capturedRef: { current: ReturnType<typeof useAuth> | null } = { current: null };
       render(
         <AuthProvider>
-          <Capture />
+          <Capture onCapture={(value) => { capturedRef.current = value; }} />
         </AuthProvider>,
       );
-      await waitFor(() => expect(captured?.loading).toBe(false));
+      await waitFor(() => expect(capturedRef.current?.loading).toBe(false));
 
-      await expect(captured!.devLogin('x@example.com', 'X')).rejects.toThrow(
+      await expect(capturedRef.current!.devLogin('x@example.com', 'X')).rejects.toThrow(
         'dev-login désactivé en production',
       );
       expect(getToken()).toBeNull();
@@ -152,19 +159,15 @@ describe('AuthContext / useAuth', () => {
         mockJsonResponse(null, false, 500),
       );
 
-      let captured: ReturnType<typeof useAuth> | null = null;
-      function Capture() {
-        captured = useAuth();
-        return null;
-      }
+      const capturedRef: { current: ReturnType<typeof useAuth> | null } = { current: null };
       render(
         <AuthProvider>
-          <Capture />
+          <Capture onCapture={(value) => { capturedRef.current = value; }} />
         </AuthProvider>,
       );
-      await waitFor(() => expect(captured?.loading).toBe(false));
+      await waitFor(() => expect(capturedRef.current?.loading).toBe(false));
 
-      await expect(captured!.devLogin('x@example.com', 'X')).rejects.toThrow('Erreur 500');
+      await expect(capturedRef.current!.devLogin('x@example.com', 'X')).rejects.toThrow('Erreur 500');
     });
   });
 

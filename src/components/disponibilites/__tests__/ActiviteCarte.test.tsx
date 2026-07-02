@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ActiviteCarte } from '../ActiviteCarte';
-import type { ActiviteColonneDto, DisponibiliteEffectiveDto } from '../../../api/disponibilites';
+import type { ActiviteColonneDto } from '../../../api/disponibilites';
 
 const activite: ActiviteColonneDto = {
   id: 'activite-1',
