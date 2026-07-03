@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { LayoutRoot } from './components/layout/LayoutRoot';
 import { RequireAdminRoute } from './components/layout/RequireAdminRoute';
+import { RequireAuthRoute } from './components/layout/RequireAuthRoute';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
@@ -9,6 +10,7 @@ import { MesDisponibilitesPage } from './pages/MesDisponibilitesPage';
 import { AdminActivitesPage } from './pages/AdminActivitesPage';
 import { AdminPlanificationActivitesPage } from './pages/AdminPlanificationActivitesPage';
 import { AdminUtilisateursPage } from './pages/AdminUtilisateursPage';
+import { ProfilPage } from './pages/ProfilPage';
 
 export default function App() {
   return (
@@ -41,6 +43,14 @@ export default function App() {
             <RequireAdminRoute>
               <AdminUtilisateursPage />
             </RequireAdminRoute>
+          }
+        />
+        <Route
+          path="/profil"
+          element={
+            <RequireAuthRoute>
+              <ProfilPage />
+            </RequireAuthRoute>
           }
         />
       </Routes>

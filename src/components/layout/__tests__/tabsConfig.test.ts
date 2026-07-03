@@ -68,4 +68,18 @@ describe('tabsConfig', () => {
     });
     expect(utilisateurs?.primary).toBeFalsy();
   });
+
+  it('exposes the "profil" tab pointing at /profil, visible to any connected user (not admin-only, not primary)', () => {
+    const profil = tabsConfig.find((tab) => tab.id === 'profil');
+
+    expect(profil).toEqual({
+      id: 'profil',
+      label: 'Mon profil',
+      shortLabel: 'Profil',
+      path: '/profil',
+      requiresAuth: true,
+    });
+    expect(profil?.requiresAdmin).toBeFalsy();
+    expect(profil?.primary).toBeFalsy();
+  });
 });

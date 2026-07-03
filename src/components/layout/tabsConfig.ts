@@ -5,6 +5,8 @@ export interface TabConfig {
   path: string;
   /** Si `true`, le tab n'est affiché que si l'utilisateur connecté a le rôle `admin`. */
   requiresAdmin?: boolean;
+  /** Si `true`, le tab n'est affiché que si un utilisateur est connecté (quel que soit son rôle). */
+  requiresAuth?: boolean;
   /** Si `true`, le tab est mis en avant dans le bandeau (haut en desktop, bas en mobile). */
   primary?: boolean;
 }
@@ -45,5 +47,12 @@ export const tabsConfig: TabConfig[] = [
     shortLabel: 'Utilisateurs',
     path: '/admin/utilisateurs',
     requiresAdmin: true,
+  },
+  {
+    id: 'profil',
+    label: 'Mon profil',
+    shortLabel: 'Profil',
+    path: '/profil',
+    requiresAuth: true,
   },
 ];

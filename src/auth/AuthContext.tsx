@@ -16,6 +16,9 @@ export interface UtilisateurProfile {
   displayName: string;
   email?: string;
   role: RoleUtilisateur;
+  /** ISO 8601 — yyyy-mm-dd */
+  dateNaissance?: string;
+  numeroLicence?: string;
 }
 
 interface AuthContextValue {

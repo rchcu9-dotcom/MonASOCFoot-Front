@@ -13,6 +13,9 @@ export function useVisibleTabs(): TabConfig[] {
     if (tab.requiresAdmin) {
       return !loading && user?.role === 'admin';
     }
+    if (tab.requiresAuth) {
+      return !loading && user != null;
+    }
     return true;
   });
 }

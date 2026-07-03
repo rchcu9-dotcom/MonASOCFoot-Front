@@ -18,6 +18,14 @@ export interface UtilisateurDto {
   dateApparition: string;
   /** ISO 8601 */
   derniereConnexion?: string;
+  /** ISO 8601 — yyyy-mm-dd */
+  dateNaissance?: string;
+  numeroLicence?: string;
+}
+
+export interface ModifierProfilUtilisateurInput {
+  dateNaissance?: string;
+  numeroLicence?: string;
 }
 
 async function parseJsonOrThrow<T>(res: Response, messageErreur: string): Promise<T> {
@@ -46,4 +54,15 @@ export async function modifierRoleUtilisateur(
     body: JSON.stringify({ role }),
   });
   return parseJsonOrThrow<UtilisateurDto>(res, "Erreur lors de la modification du rôle de l'utilisateur");
+}
+
+export async function modifierMonProfil(
+  dto: ModifierProfilUtilisateurInput,
+): Promise<UtilisateurDto> {
+  const res = await authFetch(`${API_BASE_URL}/users/me/profil`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+  return parseJsonOrThrow<UtilisateurDto>(res, 'Erreur lors de la mise à jour du profil');
 }

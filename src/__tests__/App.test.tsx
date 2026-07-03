@@ -47,4 +47,18 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: 'MonASOCFoot' })).toBeInTheDocument();
   });
+
+  it("redirige vers '/login' sur la route '/profil' quand aucun utilisateur n'est connecté", async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/profil']}>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument();
+  });
 });

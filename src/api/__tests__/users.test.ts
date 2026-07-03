@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchUtilisateurs, modifierRoleUtilisateur, type UtilisateurDto } from '../users';
+import { fetchUtilisateurs, modifierRoleUtilisateur, modifierMonProfil, type UtilisateurDto } from '../users';
 import { authFetch } from '../authFetch';
 
 vi.mock('../authFetch');
@@ -88,6 +88,56 @@ describe('modifierRoleUtilisateur', () => {
 
     await expect(modifierRoleUtilisateur('inconnu', 'admin')).rejects.toThrow(
       'Utilisateur inconnu introuvable',
+    );
+  });
+});
+
+describe('modifierMonProfil', () => {
+  beforeEach(() => {
+    vi.mocked(authFetch).mockReset();
+  });
+
+  it('appelle authFetch en PATCH sur /users/me/profil avec le DTO sérialisé en JSON', async () => {
+    const utilisateurModifie = { ...utilisateur, dateNaissance: '1990-05-12', numeroLicence: '12345678' };
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(utilisateurModifie));
+
+    const result = await modifierMonProfil({ dateNaissance: '1990-05-12', numeroLicence: '12345678' });
+
+    expect(authFetch).toHaveBeenCalledWith('http://localhost:3020/users/me/profil', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dateNaissance: '1990-05-12', numeroLicence: '12345678' }),
+    });
+    expect(result).toEqual(utilisateurModifie);
+  });
+
+  it('sérialise un DTO avec des champs absents (envoi partiel, ex: seulement numeroLicence)', async () => {
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(utilisateur));
+
+    await modifierMonProfil({ numeroLicence: '12345678' });
+
+    expect(authFetch).toHaveBeenCalledWith('http://localhost:3020/users/me/profil', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numeroLicence: '12345678' }),
+    });
+  });
+
+  it("lève une erreur avec le message du body quand la réponse n'est pas ok (ex: date de naissance dans le futur, 400)", async () => {
+    vi.mocked(authFetch).mockResolvedValue(
+      mockResponse({ message: 'La date de naissance ne peut pas être dans le futur' }, false, 400),
+    );
+
+    await expect(modifierMonProfil({ dateNaissance: '2099-01-01' })).rejects.toThrow(
+      'La date de naissance ne peut pas être dans le futur',
+    );
+  });
+
+  it("lève une erreur avec un message par défaut quand le body n'est pas exploitable", async () => {
+    vi.mocked(authFetch).mockResolvedValue(mockResponse(null, false, 500));
+
+    await expect(modifierMonProfil({})).rejects.toThrow(
+      /Erreur lors de la mise à jour du profil \(500\)/,
     );
   });
 });

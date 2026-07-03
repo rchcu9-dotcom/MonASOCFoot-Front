@@ -12,6 +12,7 @@ vi.mock('../../components/layout/tabsConfig', () => ({
   tabsConfig: [
     { id: 'accueil', label: 'Accueil', shortLabel: 'Accueil', path: '/', primary: true },
     { id: 'admin', label: 'Admin', shortLabel: 'Admin', path: '/admin', requiresAdmin: true },
+    { id: 'profil', label: 'Mon profil', shortLabel: 'Profil', path: '/profil', requiresAuth: true },
   ],
 }));
 
@@ -75,6 +76,36 @@ describe('useVisibleTabs', () => {
 
     const { result } = renderHook(() => useVisibleTabs());
 
-    expect(result.current.map((tab) => tab.id)).toEqual(['accueil', 'admin']);
+    expect(result.current.map((tab) => tab.id)).toEqual(['accueil', 'admin', 'profil']);
+  });
+
+  it('hides the requiresAuth tab (profil) when no user is connected', () => {
+    mockAuth({ user: null, loading: false });
+
+    const { result } = renderHook(() => useVisibleTabs());
+
+    expect(result.current.find((tab) => tab.id === 'profil')).toBeUndefined();
+  });
+
+  it('hides the requiresAuth tab (profil) while the auth state is loading', () => {
+    mockAuth({
+      user: { id: 'user-2', providerId: 'joueur@example.com', provider: 'dev', displayName: 'Joueur', role: 'joueur' },
+      loading: true,
+    });
+
+    const { result } = renderHook(() => useVisibleTabs());
+
+    expect(result.current.find((tab) => tab.id === 'profil')).toBeUndefined();
+  });
+
+  it('shows the requiresAuth tab (profil) for any connected user, joueur or admin', () => {
+    mockAuth({
+      user: { id: 'user-2', providerId: 'joueur@example.com', provider: 'dev', displayName: 'Joueur', role: 'joueur' },
+      loading: false,
+    });
+
+    const { result } = renderHook(() => useVisibleTabs());
+
+    expect(result.current.find((tab) => tab.id === 'profil')).toMatchObject({ id: 'profil', path: '/profil' });
   });
 });
