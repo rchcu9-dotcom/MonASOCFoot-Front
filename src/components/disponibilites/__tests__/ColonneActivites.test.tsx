@@ -75,4 +75,36 @@ describe('ColonneActivites', () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith('a2');
   });
+
+  describe('transmission de la couleur de contour à ActiviteCarte', () => {
+    it('calcule et transmet le contour vert (#4ade80) pour une disponibilité renseignée', () => {
+      const lignes = [
+        {
+          activite: makeActivite({ date: '2020-01-01' }), // date passée, sans effet car renseignée
+          disponibilite: { statut: 'present', source: 'activite' } as const,
+        },
+      ];
+      render(<ColonneActivites titre="Mes disponibilités" lignes={lignes} onSelect={vi.fn()} />);
+
+      expect(screen.getByRole('button').style.getPropertyValue('--contour')).toBe('#4ade80');
+    });
+
+    it('calcule et transmet le contour rouge (#f87171) pour une activité non renseignée ≤ 7 jours', () => {
+      const lignes = [
+        { activite: makeActivite({ date: '2020-01-01' }), disponibilite: disponibiliteAucune },
+      ];
+      render(<ColonneActivites titre="À renseigner" lignes={lignes} onSelect={vi.fn()} />);
+
+      expect(screen.getByRole('button').style.getPropertyValue('--contour')).toBe('#f87171');
+    });
+
+    it('calcule et transmet le contour jaune (#facc15) pour une activité non renseignée > 7 jours', () => {
+      const lignes = [
+        { activite: makeActivite({ date: '2099-12-31' }), disponibilite: disponibiliteAucune },
+      ];
+      render(<ColonneActivites titre="À renseigner" lignes={lignes} onSelect={vi.fn()} />);
+
+      expect(screen.getByRole('button').style.getPropertyValue('--contour')).toBe('#facc15');
+    });
+  });
 });

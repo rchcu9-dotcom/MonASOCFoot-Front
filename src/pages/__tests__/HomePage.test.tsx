@@ -63,7 +63,6 @@ function renderHomePage() {
 }
 
 const resumeVide: ResumeAccueilDto = {
-  dernierePassee: null,
   prochainesDates: [],
   tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
 };
@@ -151,8 +150,9 @@ describe('HomePage', () => {
 
       renderHomePage();
 
-      expect(screen.getByText('Ma dernière activité')).toBeInTheDocument();
       expect(screen.getByText('Mon tableau de bord')).toBeInTheDocument();
+      expect(screen.getByText('Mes activités à venir')).toBeInTheDocument();
+      expect(screen.queryByText('Ma dernière activité')).not.toBeInTheDocument();
     });
   });
 });

@@ -81,6 +81,8 @@ export interface EffectifMatchResponseDto {
   matchPrecedentId: string | null;
   matchSuivantId: string | null;
   badge: EffectifMatchBadgeDto | null;
+  /** Ordre chronologique, tous les matchs à venir. Vide si aucun match à venir. */
+  matchsAVenir: ActiviteColonneDto[];
   joueurs: JoueurEffectifMatchDto[];
 }
 
@@ -206,7 +208,6 @@ export interface TableauDeBordAccueilDto {
 }
 
 export interface ResumeAccueilDto {
-  dernierePassee: ActiviteAvecDisponibiliteDto | null;
   prochainesDates: ProchaineDateAccueilDto[];
   tableauDeBord: TableauDeBordAccueilDto;
 }

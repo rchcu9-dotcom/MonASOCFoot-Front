@@ -19,6 +19,7 @@ const reponseVide: EffectifMatchResponseDto = {
   matchPrecedentId: null,
   matchSuivantId: null,
   badge: null,
+  matchsAVenir: [],
   joueurs: [],
 };
 

@@ -23,6 +23,7 @@ export function DisponibilitesEffectifPage() {
           <>
             <EffectifMatchNavigation
               matchCourant={data.matchCourant}
+              matchsAVenir={data.matchsAVenir}
               badge={data.badge}
               peutReculer={data.matchPrecedentId !== null}
               peutAvancer={data.matchSuivantId !== null}
@@ -32,6 +33,7 @@ export function DisponibilitesEffectifPage() {
               onSuivant={() => {
                 if (data.matchSuivantId) setMatchIdSelectionne(data.matchSuivantId);
               }}
+              onSelectionnerMatch={setMatchIdSelectionne}
             />
             <EffectifJoueursTable joueurs={data.joueurs} />
           </>

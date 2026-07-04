@@ -1,4 +1,5 @@
 import type { TableauDeBordAccueilDto } from '../../api/disponibilites';
+import { getPourcentageCouleur } from '../../utils/pourcentageRenseignement';
 
 interface Props {
   tableauDeBord: TableauDeBordAccueilDto;
@@ -22,7 +23,9 @@ export function TableauDeBordAccueil({ tableauDeBord }: Props) {
         </div>
         <div className="tableau-de-bord__indicateur">
           <dt>Taux de renseignement</dt>
-          <dd>{pourcentageRenseignement}%</dd>
+          <dd style={{ color: getPourcentageCouleur(pourcentageRenseignement) }}>
+            {pourcentageRenseignement}%
+          </dd>
         </div>
       </dl>
     </section>

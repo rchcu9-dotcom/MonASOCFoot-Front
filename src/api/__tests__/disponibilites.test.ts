@@ -278,7 +278,6 @@ describe('fetchResumeAccueil', () => {
   it('appelle authFetch en GET implicite sur /disponibilites/resume-accueil', async () => {
     vi.mocked(authFetch).mockResolvedValue(
       mockResponse({
-        dernierePassee: null,
         prochainesDates: [],
         tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
       }),
@@ -291,18 +290,24 @@ describe('fetchResumeAccueil', () => {
 
   it('renvoie le JSON parsé quand la réponse est ok', async () => {
     const body = {
-      dernierePassee: {
-        activite: {
-          id: 'a1',
-          date: '2026-06-20',
-          heureConvocation: '14:00',
-          heureDebut: '15:00',
-          label: 'Match',
-          type: 'match' as const,
+      prochainesDates: [
+        {
+          date: '2026-07-01',
+          activites: [
+            {
+              activite: {
+                id: 'a1',
+                date: '2026-07-01',
+                heureConvocation: '14:00',
+                heureDebut: '15:00',
+                label: 'Match',
+                type: 'match' as const,
+              },
+              disponibilite: { statut: 'present' as const, source: 'activite' as const },
+            },
+          ],
         },
-        disponibilite: { statut: 'present' as const, source: 'activite' as const },
-      },
-      prochainesDates: [],
+      ],
       tableauDeBord: { totalAVenir: 3, renseigneesAVenir: 1, pourcentageRenseignement: 33 },
     };
     vi.mocked(authFetch).mockResolvedValue(mockResponse(body));

@@ -72,10 +72,10 @@ describe('AdminActivitesPage', () => {
   it('affiche le message de chargement pendant isLoading, sans liste', () => {
     mockUseActivites({ isLoading: true });
 
-    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
+    const { container } = render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
     expect(screen.getByText('Chargement des activités…')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelector('.activite-admin-carte')).not.toBeInTheDocument();
   });
 
   it("affiche un message d'erreur quand isError est vrai", () => {
@@ -89,9 +89,9 @@ describe('AdminActivitesPage', () => {
   it('affiche la liste des activités et le bouton "Nouvelle activité" en succès', () => {
     mockUseActivites({ data: [activite] });
 
-    render(<AdminActivitesPage />, { wrapper: MemoryRouter });
+    const { container } = render(<AdminActivitesPage />, { wrapper: MemoryRouter });
 
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(container.querySelector('.activite-admin-carte')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Nouvelle activité' })).toBeInTheDocument();
   });
 

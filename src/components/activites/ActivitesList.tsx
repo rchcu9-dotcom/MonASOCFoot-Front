@@ -1,4 +1,5 @@
 import type { ActiviteDto } from '../../api/activites';
+import { ActiviteAdminCarte } from './ActiviteAdminCarte';
 
 interface Props {
   activites: ActiviteDto[];
@@ -6,7 +7,7 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-/** Tableau des activités, trié par date, avec actions Modifier/Supprimer par ligne. */
+/** Liste de cartes activité, triée par date, avec actions Modifier/Supprimer par carte. */
 export function ActivitesList({ activites, onEdit, onDelete }: Props) {
   if (activites.length === 0) {
     return <p>Aucune activité pour le moment.</p>;
@@ -18,44 +19,15 @@ export function ActivitesList({ activites, onEdit, onDelete }: Props) {
   );
 
   return (
-    <div className="table-scroll">
-      <table className="activites-list">
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Équipe</th>
-            <th scope="col">Lieu</th>
-            <th scope="col">Convocation</th>
-            <th scope="col">Début</th>
-            <th scope="col">Label</th>
-            <th scope="col">Type</th>
-            <th scope="col">Commentaire</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {activitesTriees.map((activite) => (
-            <tr key={activite.id}>
-              <td>{activite.date ?? 'Sans date'}</td>
-              <td>{activite.equipe ?? ''}</td>
-              <td>{activite.lieu ?? ''}</td>
-              <td>{activite.heureConvocation}</td>
-              <td>{activite.heureDebut}</td>
-              <td>{activite.label}</td>
-              <td>{activite.type}</td>
-              <td>{activite.commentaire ?? ''}</td>
-              <td>
-                <button type="button" onClick={() => onEdit(activite)}>
-                  Modifier
-                </button>
-                <button type="button" onClick={() => onDelete(activite.id)}>
-                  Supprimer
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="activites-cartes">
+      {activitesTriees.map((activite) => (
+        <ActiviteAdminCarte
+          key={activite.id}
+          activite={activite}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ))}
     </div>
   );
 }

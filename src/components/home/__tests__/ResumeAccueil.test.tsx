@@ -50,7 +50,6 @@ function renderResume(resume: ResumeAccueilDto) {
 }
 
 const resumeVide: ResumeAccueilDto = {
-  dernierePassee: null,
   prochainesDates: [],
   tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
 };
@@ -65,12 +64,13 @@ describe('ResumeAccueil', () => {
     mockDispoJournee();
   });
 
-  it('affiche les 3 sections : dernière activité, prochaines dates, tableau de bord', () => {
+  it('affiche les 2 sections : tableau de bord, mes activités à venir (sans bloc "Ma dernière activité")', () => {
     renderResume(resumeVide);
 
-    expect(screen.getByText('Ma dernière activité')).toBeInTheDocument();
-    expect(screen.getByText('Aucune activité à venir.')).toBeInTheDocument();
     expect(screen.getByText('Mon tableau de bord')).toBeInTheDocument();
+    expect(screen.getByText('Mes activités à venir')).toBeInTheDocument();
+    expect(screen.getByText('Aucune activité à venir.')).toBeInTheDocument();
+    expect(screen.queryByText('Ma dernière activité')).not.toBeInTheDocument();
   });
 
   it('affiche un lien vers /mes-disponibilites', () => {
@@ -79,30 +79,6 @@ describe('ResumeAccueil', () => {
     const lien = screen.getByText('Voir toutes mes disponibilités');
     expect(lien).toBeInTheDocument();
     expect(lien.closest('a')).toHaveAttribute('href', '/mes-disponibilites');
-  });
-
-  it('ouvre la modale au clic sur la dernière activité passée', () => {
-    const resume: ResumeAccueilDto = {
-      ...resumeVide,
-      dernierePassee: {
-        activite: {
-          id: 'a1',
-          date: '2026-06-20',
-          heureConvocation: '14:00',
-          heureDebut: '15:00',
-          label: 'Match retour',
-          type: 'match',
-        },
-        disponibilite: { statut: 'present', source: 'activite' },
-      },
-    };
-
-    renderResume(resume);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('Match retour'));
-
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('ouvre la modale au clic sur une activité des prochaines dates', () => {
@@ -170,17 +146,24 @@ describe('ResumeAccueil', () => {
   it('ferme la modale après un clic sur "Annuler"', () => {
     const resume: ResumeAccueilDto = {
       ...resumeVide,
-      dernierePassee: {
-        activite: {
-          id: 'a1',
-          date: '2026-06-20',
-          heureConvocation: '14:00',
-          heureDebut: '15:00',
-          label: 'Match retour',
-          type: 'match',
+      prochainesDates: [
+        {
+          date: '2026-07-01',
+          activites: [
+            {
+              activite: {
+                id: 'a1',
+                date: '2026-07-01',
+                heureConvocation: '14:00',
+                heureDebut: '15:00',
+                label: 'Match retour',
+                type: 'match',
+              },
+              disponibilite: { statut: 'present', source: 'activite' },
+            },
+          ],
         },
-        disponibilite: { statut: 'present', source: 'activite' },
-      },
+      ],
     };
 
     renderResume(resume);

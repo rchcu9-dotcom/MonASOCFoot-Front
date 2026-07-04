@@ -125,20 +125,57 @@ a {
   gap: 0.25rem;
 }
 
-.activites-list {
+.activites-cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.activite-admin-carte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100%;
-  border-collapse: collapse;
-}
-
-.activites-list th,
-.activites-list td {
   border: 1px solid var(--color-border);
-  padding: 0.5rem;
-  text-align: left;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--color-background-alt);
 }
 
-.activites-list td button {
-  margin-right: 0.5rem;
+.activite-admin-carte:nth-child(even) {
+  background: var(--color-background);
+}
+
+.activite-admin-carte__entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.activite-admin-carte__label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: 1;
+  min-width: 180px;
+}
+
+.activite-admin-carte__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.activite-admin-carte__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.activite-admin-carte__commentaire {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .confirm-dialog__overlay {
@@ -399,6 +436,12 @@ a {
   padding: 0.75rem;
 }
 
+.prochaines-activites__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 .dispo-activite-carte {
   display: flex;
   flex-wrap: wrap;
@@ -406,7 +449,10 @@ a {
   gap: 0.6rem;
   width: 100%;
   text-align: left;
-  border: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 4px solid var(--contour, var(--color-border));
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   background: var(--color-background-alt);
@@ -415,9 +461,12 @@ a {
   font: inherit;
 }
 
-.dispo-activite-carte:hover {
+.dispo-activite-carte:hover,
+.dispo-activite-carte:focus-visible {
   background: rgba(255, 255, 255, 0.04);
-  border-color: var(--color-primary);
+  border-top-color: var(--color-primary);
+  border-right-color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .dispo-activite-carte__date {
@@ -452,6 +501,11 @@ a {
 }
 
 .effectif-match-navigation__fleche {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-background-alt);
@@ -475,6 +529,24 @@ a {
   gap: 0.5rem;
 }
 
+.effectif-match-navigation__label-trigger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.effectif-match-navigation__label-trigger:hover .effectif-match-navigation__titre {
+  text-decoration: underline;
+}
+
 .effectif-match-navigation__titre {
   font-weight: 600;
 }
@@ -483,21 +555,89 @@ a {
   color: var(--color-text-muted);
 }
 
+.effectif-match-selecteur-modal {
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.effectif-match-selecteur-modal__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+.effectif-match-selecteur-modal__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.effectif-match-selecteur-modal__item:last-child {
+  border-bottom: none;
+}
+
+.effectif-match-selecteur-modal__item:hover {
+  background: var(--color-background);
+}
+
+.effectif-match-selecteur-modal__item--selectionne {
+  background: var(--color-background);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
 .effectif-match-badge {
   color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 
-.effectif-joueurs-table {
-  width: 100%;
-  border-collapse: collapse;
+.effectif-joueurs-cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.effectif-joueurs-table th,
-.effectif-joueurs-table td {
+.effectif-joueurs-cartes__vide {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.effectif-joueur-carte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
   border: 1px solid var(--color-border);
-  padding: 0.5rem;
-  text-align: left;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  background: var(--color-background-alt);
+}
+
+.effectif-joueur-carte:nth-child(even) {
+  background: var(--color-background);
+}
+
+.effectif-joueur-carte__nom {
+  font-weight: 600;
+  flex: 1;
+  min-width: 140px;
 }
 
 .statut-badge {

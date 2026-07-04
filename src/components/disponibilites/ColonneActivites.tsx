@@ -1,4 +1,5 @@
 import type { ActiviteColonneDto, DisponibiliteEffectiveDto } from '../../api/disponibilites';
+import { getContourCouleur } from '../../utils/disponibiliteUrgence';
 import { ActiviteCarte } from './ActiviteCarte';
 
 interface Ligne {
@@ -29,6 +30,7 @@ export function ColonneActivites({ titre, lignes, onSelect, messageVide }: Props
             key={activite.id}
             activite={activite}
             disponibilite={disponibilite}
+            couleurContour={getContourCouleur(disponibilite, activite.date)}
             onClick={() => onSelect(activite.id)}
           />
         ))}

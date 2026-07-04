@@ -15,6 +15,15 @@ const matchCourant: EffectifMatchResponseDto['matchCourant'] = {
   type: 'match',
 };
 
+const matchSuivantDto: NonNullable<EffectifMatchResponseDto['matchCourant']> = {
+  id: 'm2',
+  date: '2026-07-08',
+  heureConvocation: '14:00',
+  heureDebut: '15:00',
+  label: 'Match aller',
+  type: 'match',
+};
+
 const joueurs: JoueurEffectifMatchDto[] = [
   {
     utilisateurId: 'u1',
@@ -29,6 +38,7 @@ const reponseAvecMatch: EffectifMatchResponseDto = {
   matchPrecedentId: 'm0',
   matchSuivantId: 'm2',
   badge: { nbPresents: 1, nbDisponibles: 0, pourcentageSaisie: 100 },
+  matchsAVenir: [matchCourant!, matchSuivantDto],
   joueurs,
 };
 
@@ -37,6 +47,7 @@ const reponseAucunMatch: EffectifMatchResponseDto = {
   matchPrecedentId: null,
   matchSuivantId: null,
   badge: null,
+  matchsAVenir: [],
   joueurs: [],
 };
 
@@ -54,42 +65,42 @@ describe('DisponibilitesEffectifPage', () => {
     vi.mocked(useEffectifMatch).mockReset();
   });
 
-  it('affiche le message de chargement pendant isLoading, sans navigation ni tableau', () => {
+  it('affiche le message de chargement pendant isLoading, sans navigation ni cartes joueurs', () => {
     mockUseEffectifMatch({ isLoading: true });
 
-    render(<DisponibilitesEffectifPage />);
+    const { container } = render(<DisponibilitesEffectifPage />);
 
     expect(screen.getByText(/Chargement des disponibilités/)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelector('.effectif-joueur-carte')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it("affiche un message d'erreur quand isError est vrai", () => {
     mockUseEffectifMatch({ isError: true });
 
-    render(<DisponibilitesEffectifPage />);
+    const { container } = render(<DisponibilitesEffectifPage />);
 
     expect(screen.getByText(/Impossible de charger les disponibilités/)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelector('.effectif-joueur-carte')).not.toBeInTheDocument();
   });
 
-  it('affiche la navigation et le tableau des joueurs quand un match est à afficher', () => {
+  it('affiche la navigation et les cartes des joueurs quand un match est à afficher', () => {
     mockUseEffectifMatch({ data: reponseAvecMatch });
 
-    render(<DisponibilitesEffectifPage />);
+    const { container } = render(<DisponibilitesEffectifPage />);
 
     expect(screen.getByText('Match retour')).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(container.querySelectorAll('.effectif-joueur-carte')).toHaveLength(1);
     expect(screen.getByText('Alice Dupont')).toBeInTheDocument();
   });
 
-  it('affiche "Aucun match à venir." quand matchCourant est null, sans navigation ni tableau', () => {
+  it('affiche "Aucun match à venir." quand matchCourant est null, sans navigation ni cartes joueurs', () => {
     mockUseEffectifMatch({ data: reponseAucunMatch });
 
-    render(<DisponibilitesEffectifPage />);
+    const { container } = render(<DisponibilitesEffectifPage />);
 
     expect(screen.getByText('Aucun match à venir.')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelector('.effectif-joueur-carte')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
@@ -123,13 +134,29 @@ describe('DisponibilitesEffectifPage', () => {
     expect(lastCallArgs?.[0]).toBe('m0');
   });
 
-  it("n'expose aucun élément de modification de donnée (aucun lien ni champ de saisie ; les flèches ne font que naviguer)", () => {
+  it("n'expose aucun élément de modification de donnée (aucun lien ni champ de saisie ; seuls navigation et sélecteur de match sont interactifs)", () => {
     mockUseEffectifMatch({ data: reponseAvecMatch });
 
     render(<DisponibilitesEffectifPage />);
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('button')).toHaveLength(2);
+    // Flèche précédente, flèche suivante, bouton déclencheur de la pop-up de sélection.
+    expect(screen.queryAllByRole('button')).toHaveLength(3);
+  });
+
+  it('ouvre la pop-up de sélection au clic sur le bloc Catégorie/Label/Date et sélectionne un autre match', () => {
+    mockUseEffectifMatch({ data: reponseAvecMatch });
+
+    render(<DisponibilitesEffectifPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Match retour/ }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Match aller/ }));
+
+    const lastCallArgs = vi.mocked(useEffectifMatch).mock.calls.at(-1);
+    expect(lastCallArgs?.[0]).toBe('m2');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

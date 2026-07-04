@@ -15,7 +15,6 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const resumeVide: ResumeAccueilDto = {
-  dernierePassee: null,
   prochainesDates: [],
   tableauDeBord: { totalAVenir: 0, renseigneesAVenir: 0, pourcentageRenseignement: 0 },
 };

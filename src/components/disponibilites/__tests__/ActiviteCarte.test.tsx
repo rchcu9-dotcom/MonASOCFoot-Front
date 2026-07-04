@@ -20,6 +20,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activite}
         disponibilite={{ statut: 'present', source: 'activite' }}
+        couleurContour="#4ade80"
         onClick={vi.fn()}
       />,
     );
@@ -37,6 +38,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activite}
         disponibilite={{ statut: 'present', source: 'activite' }}
+        couleurContour="#4ade80"
         onClick={vi.fn()}
       />,
     );
@@ -50,6 +52,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activite}
         disponibilite={{ statut: 'autre', source: 'aucune' }}
+        couleurContour="#f87171"
         onClick={vi.fn()}
       />,
     );
@@ -65,6 +68,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activite}
         disponibilite={{ statut: 'present', source: 'journee' }}
+        couleurContour="#4ade80"
         onClick={onClick}
       />,
     );
@@ -79,6 +83,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activite}
         disponibilite={{ statut: 'present', source: 'journee' }}
+        couleurContour="#4ade80"
         onClick={vi.fn()}
       />,
     );
@@ -96,6 +101,7 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activiteSansCommentaire}
         disponibilite={{ statut: 'present', source: 'journee' }}
+        couleurContour="#4ade80"
         onClick={vi.fn()}
       />,
     );
@@ -111,11 +117,55 @@ describe('ActiviteCarte', () => {
       <ActiviteCarte
         activite={activiteAutre}
         disponibilite={{ statut: 'present', source: 'journee' }}
+        couleurContour="#4ade80"
         onClick={vi.fn()}
       />,
     );
 
     const titre = screen.getByRole('button').getAttribute('title');
     expect(titre).toContain('Autre');
+  });
+
+  it('porte la classe CSS "dispo-activite-carte" ciblée par le rail de statut coloré (garde-fou anti-régression)', () => {
+    render(
+      <ActiviteCarte
+        activite={activite}
+        disponibilite={{ statut: 'present', source: 'activite' }}
+        couleurContour="#4ade80"
+        onClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button').className).toContain('dispo-activite-carte');
+  });
+
+  describe('couleur de contour (CSS variable --contour)', () => {
+    // ActiviteCarte ne calcule plus aucune règle d'urgence elle-même (cf. track Arch/Dev) :
+    // elle se contente d'appliquer telle quelle la couleur reçue en prop `couleurContour`.
+    // Les règles de calcul (seuil J+7, rang de date) sont testées dans disponibiliteUrgence.test.ts,
+    // et leur bon câblage par appelant dans ColonneActivites.test.tsx / ProchainesDatesActivites.test.tsx.
+    it('applique telle quelle la couleur reçue via la prop couleurContour', () => {
+      render(
+        <ActiviteCarte
+          activite={activite}
+          disponibilite={{ statut: 'present', source: 'activite' }}
+          couleurContour="#4ade80"
+          onClick={vi.fn()}
+        />,
+      );
+      expect(screen.getByRole('button').style.getPropertyValue('--contour')).toBe('#4ade80');
+    });
+
+    it('reflète un changement de couleur de contour sans dépendre de disponibilite/activite', () => {
+      render(
+        <ActiviteCarte
+          activite={activite}
+          disponibilite={{ statut: 'autre', source: 'aucune' }}
+          couleurContour="#facc15"
+          onClick={vi.fn()}
+        />,
+      );
+      expect(screen.getByRole('button').style.getPropertyValue('--contour')).toBe('#facc15');
+    });
   });
 });

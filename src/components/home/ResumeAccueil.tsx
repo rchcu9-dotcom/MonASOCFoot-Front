@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import type { ResumeAccueilDto } from '../../api/disponibilites';
 import { useMesDisponibilitesJournee } from '../../hooks/useMesDisponibilitesJournee';
 import { DisponibiliteDetailModal } from '../disponibilites/DisponibiliteDetailModal';
-import { DerniereActivitePassee } from './DerniereActivitePassee';
 import { ProchainesDatesActivites } from './ProchainesDatesActivites';
 import { TableauDeBordAccueil } from './TableauDeBordAccueil';
 
@@ -12,8 +11,8 @@ interface Props {
 }
 
 /**
- * Tableau de bord personnel de la page Accueil : indicateurs, dernière activité passée, puis
- * 3 prochaines dates. Orchestre l'ouverture de `DisponibiliteDetailModal` (réutilisée telle quelle,
+ * Tableau de bord personnel de la page Accueil : indicateurs, puis 3 prochaines dates.
+ * Orchestre l'ouverture de `DisponibiliteDetailModal` (réutilisée telle quelle,
  * cf. `MesDisponibilitesPage`) au clic sur une activité.
  */
 export function ResumeAccueil({ resume }: Props) {
@@ -24,10 +23,9 @@ export function ResumeAccueil({ resume }: Props) {
     (mesDisponibilitesJournee ?? []).map((d) => [d.date, d]),
   );
 
-  const toutesLesLignes = [
-    ...(resume.dernierePassee ? [resume.dernierePassee] : []),
-    ...resume.prochainesDates.flatMap((prochaineDate) => prochaineDate.activites),
-  ];
+  const toutesLesLignes = resume.prochainesDates.flatMap(
+    (prochaineDate) => prochaineDate.activites,
+  );
 
   const ligneSelectionnee = toutesLesLignes.find(
     (ligne) => ligne.activite.id === activiteSelectionneeId,
@@ -36,10 +34,6 @@ export function ResumeAccueil({ resume }: Props) {
   return (
     <div className="resume-accueil">
       <TableauDeBordAccueil tableauDeBord={resume.tableauDeBord} />
-      <DerniereActivitePassee
-        dernierePassee={resume.dernierePassee}
-        onSelect={setActiviteSelectionneeId}
-      />
       <ProchainesDatesActivites
         prochainesDates={resume.prochainesDates}
         onSelect={setActiviteSelectionneeId}

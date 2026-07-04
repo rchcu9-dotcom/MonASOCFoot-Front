@@ -17,33 +17,34 @@ function makeActivite(overrides: Partial<ActiviteDto> = {}): ActiviteDto {
 }
 
 describe('ActivitesList', () => {
-  it("affiche un message quand la liste est vide, sans tableau", () => {
-    render(<ActivitesList activites={[]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+  it('affiche un message quand la liste est vide, sans carte', () => {
+    const { container } = render(<ActivitesList activites={[]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByText('Aucune activité pour le moment.')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.activite-admin-carte')).toHaveLength(0);
   });
 
-  it('affiche une ligne par activité avec ses champs', () => {
+  it('affiche une carte par activité avec ses champs', () => {
     const activite = makeActivite({ commentaire: 'RDV au stade' });
     render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    expect(within(row).getByText('2026-07-01')).toBeInTheDocument();
-    expect(within(row).getByText('14:00')).toBeInTheDocument();
-    expect(within(row).getByText('15:00')).toBeInTheDocument();
-    expect(within(row).getByText('match')).toBeInTheDocument();
-    expect(within(row).getByText('RDV au stade')).toBeInTheDocument();
+    expect(screen.getByText('Match amical')).toBeInTheDocument();
+    expect(screen.getByText('2026-07-01')).toBeInTheDocument();
+    expect(screen.getByText('14:00 → 15:00')).toBeInTheDocument();
+    expect(screen.getByText('Match')).toBeInTheDocument();
+    expect(screen.getByText('RDV au stade')).toBeInTheDocument();
   });
 
   it('trie les activités par date croissante, indépendamment de l\'ordre reçu', () => {
     const recent = makeActivite({ id: 'a-recent', date: '2026-09-01', label: 'Activité récente' });
     const ancienne = makeActivite({ id: 'a-ancienne', date: '2026-01-01', label: 'Activité ancienne' });
-    render(<ActivitesList activites={[recent, ancienne]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    const { container } = render(
+      <ActivitesList activites={[recent, ancienne]} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
 
-    // Colonne « Label » en position 6 (index 5) du tableau depuis l'ajout de la colonne « Lieu ».
-    const labels = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[5].textContent);
-    expect(labels).toEqual(['Activité ancienne', 'Activité récente']);
+    const cartes = container.querySelectorAll('.activite-admin-carte');
+    expect(cartes[0]).toHaveTextContent('Activité ancienne');
+    expect(cartes[1]).toHaveTextContent('Activité récente');
   });
 
   it('appelle onEdit avec l\'activité correspondante quand on clique sur "Modifier"', () => {
@@ -68,54 +69,49 @@ describe('ActivitesList', () => {
 
   it('affiche plusieurs activités à la même date sans conflit', () => {
     const activite1 = makeActivite({ id: 'a1', date: '2026-07-01', label: 'Entraînement' });
-    const activite2 = makeActivite({ id: 'a2', date: '2026-07-01', label: 'Match' });
-    render(<ActivitesList activites={[activite1, activite2]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    const activite2 = makeActivite({ id: 'a2', date: '2026-07-01', label: 'Match retour' });
+    const { container } = render(
+      <ActivitesList activites={[activite1, activite2]} onEdit={vi.fn()} onDelete={vi.fn()} />,
+    );
 
     expect(screen.getByText('Entraînement')).toBeInTheDocument();
-    expect(screen.getByText('Match')).toBeInTheDocument();
+    expect(screen.getByText('Match retour')).toBeInTheDocument();
+    expect(container.querySelectorAll('.activite-admin-carte')).toHaveLength(2);
   });
 
   it('affiche "Sans date" pour une activité dont la date est absente', () => {
     const activite = makeActivite({ date: undefined });
     render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    expect(within(row).getByText('Sans date')).toBeInTheDocument();
+    expect(screen.getByText('Sans date')).toBeInTheDocument();
   });
 
   it("affiche l'équipe quand elle est renseignée sur l'activité", () => {
     const activite = makeActivite({ equipe: 'B' });
     render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    expect(within(row).getByText('B')).toBeInTheDocument();
+    expect(screen.getByText('B')).toBeInTheDocument();
   });
 
-  it("n'affiche pas de valeur d'équipe quand elle n'est pas renseignée", () => {
+  it("n'affiche pas de valeur d'équipe quand elle n'est pas renseignée (tiret neutre affiché à la place)", () => {
     const activite = makeActivite({ equipe: undefined });
-    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    const { container } = render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    const cellules = within(row).getAllByRole('cell');
-    // Colonne « Équipe » en position 2 (index 1) du tableau — doit être vide.
-    expect(cellules[1].textContent).toBe('');
+    expect(within(container).getByText('—')).toBeInTheDocument();
   });
 
   it('affiche le lieu quand il est renseigné sur l\'activité', () => {
     const activite = makeActivite({ lieu: 'Stade municipal' });
     render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    expect(within(row).getByText('Stade municipal')).toBeInTheDocument();
+    expect(screen.getByText('Stade municipal')).toBeInTheDocument();
   });
 
-  it("n'affiche pas de valeur de lieu quand il n'est pas renseigné (y compris activités créées avant cette feature)", () => {
+  it("n'affiche pas de badge lieu quand il n'est pas renseigné (y compris activités créées avant cette feature)", () => {
     const activite = makeActivite({ lieu: undefined });
-    render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
+    const { container } = render(<ActivitesList activites={[activite]} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
-    const row = screen.getByRole('row', { name: /Match amical/ });
-    const cellules = within(row).getAllByRole('cell');
-    // Colonne « Lieu » en position 3 (index 2) du tableau — doit être vide.
-    expect(cellules[2].textContent).toBe('');
+    // Sur cette carte : date + type + horaires = 3 pastilles ".statut-badge", pas de 4e pour le lieu.
+    expect(container.querySelectorAll('.statut-badge')).toHaveLength(3);
   });
 });
